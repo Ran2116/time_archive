@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>SPECIMEN N° 0007 · ITP</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Roboto+Slab:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #efdfd0; --ink: #2a1e16;
+    --ink-soft: #5a4638; --ink-faint: #86695a;
+    --ink-dim: #b89a88; --accent: #a83a2a;
+    --serif: 'Roboto Slab', Georgia, serif;
+    --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--paper); color: var(--ink);
+    font-family: var(--mono); font-size: 12.5px; line-height: 1.5;
+    min-height: 100vh;
+    background-image: radial-gradient(circle at 1px 1px, rgba(60,40,30,0.22) 0.8px, transparent 1.2px);
+    background-size: 5px 5px;
+    padding: 24px clamp(16px, 4vw, 48px) 80px;
+  }
+  pre { margin: 0; font-family: var(--mono); white-space: pre; line-height: 1.15; }
+  .topbar {
+    max-width: 1200px; margin: 0 auto;
+    display: flex; justify-content: space-between; align-items: center;
+    padding-bottom: 14px; border-bottom: 1px solid var(--ink);
+  }
+  .btn {
+    background: transparent; border: 1px solid var(--ink-soft);
+    color: var(--ink); padding: 6px 12px;
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.16em;
+    cursor: pointer; text-transform: uppercase; text-decoration: none;
+    display: inline-block;
+  }
+  .btn:hover { background: var(--ink); color: var(--paper); }
+  .specnum { font-size: 11px; letter-spacing: 0.2em; color: var(--ink-faint); }
+  .layout {
+    max-width: 1200px; margin: 24px auto 0;
+    display: grid; grid-template-columns: 1.1fr 1fr; gap: 24px;
+  }
+  @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
+  .panel {
+    border: 1px solid var(--ink); position: relative;
+    padding: 36px 20px; background: rgba(255,255,255,0.18);
+  }
+  .panel-title {
+    position: absolute; top: -10px; left: 14px;
+    background: var(--paper); padding: 0 8px;
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.22em;
+    color: var(--ink-soft); text-transform: uppercase;
+  }
+
+  /* === 标本展示区 === */
+  .clock-area {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 460px;
+    flex-direction: column;
+  }
+  .clock-area canvas { display: block; }
+
+  /* halftone 照片框 */
+  .print-frame {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    background: var(--paper);
+    border: 1px solid var(--ink-dim);
+    overflow: hidden;
+  }
+  .print-frame .halftone-canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  /* 照片下面的 day tally(带"becoming"感的小副标题)*/
+  .record-caption {
+    margin-top: 18px;
+    text-align: center;
+    font-family: var(--serif);
+  }
+  .record-caption .day-count {
+    font-size: 36px; font-weight: 500;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .record-caption .day-label {
+    font-style: italic; font-size: 20px;
+    color: var(--ink-soft);
+    margin-left: 4px;
+  }
+  .record-caption .day-since {
+    font-family: var(--mono);
+    font-size: 10.5px; letter-spacing: 0.22em;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    margin-top: 8px;
+  }
+
+  .controls { margin-top: 22px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+
+  .scrubber { margin-top: 18px; padding: 0 24px; }
+  .scrubber-row {
+    display: flex; justify-content: space-between;
+    font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.16em;
+    color: var(--ink-faint); margin-bottom: 4px; text-transform: uppercase;
+  }
+  .scrubber input[type=range] { width: 100%; accent-color: var(--accent); }
+
+  .plaque-kind {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.22em;
+    color: var(--accent); margin-bottom: 8px;
+  }
+  .plaque h2 {
+    font-family: var(--serif); font-style: italic;
+    font-size: 36px; line-height: 1.1; font-weight: 500;
+    margin: 0; color: var(--ink); letter-spacing: -0.01em;
+  }
+  .rule { color: var(--ink-dim); font-size: 12px; margin: 14px 0; }
+  .row {
+    display: grid; grid-template-columns: 140px 1fr; gap: 12px;
+    padding: 4px 0; align-items: baseline;
+    font-family: var(--mono); font-size: 12px;
+  }
+  .row .k { color: var(--ink-faint); }
+  .row .v { color: var(--ink); }
+  .row .v.accent { color: var(--accent); }
+  .notes { font-family: var(--mono); font-size: 12px; line-height: 1.7; color: var(--ink-soft); }
+  .reflection { margin-top: 8px; font-family: var(--serif); font-style: italic; font-size: 14px; color: var(--ink); }
+  .footer { margin-top: 16px; display: flex; justify-content: space-between; align-items: center; }
+  .footer-tag { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.18em; color: var(--ink-faint); text-transform: uppercase; }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <a href="index.html" class="btn">[ ← BACK TO CABINET ]</a>
+    <span class="specnum">SPECIMEN N° 0007</span>
+  </div>
+
+  <div class="layout">
+    <div class="panel">
+      <span class="panel-title">┄ SPECIMEN ┄</span>
+      <div class="clock-area" id="clockArea"></div>
+      <div class="controls" id="controls"></div>
+      <div class="scrubber" id="scrubber" style="display:none;">
+        <div class="scrubber-row">
+          <span>◁ scrub</span>
+          <span id="scrubLabel">● live</span>
+        </div>
+        <input type="range" id="scrubInput" min="0" step="1000" />
+      </div>
+    </div>
+
+    <div class="panel plaque">
+      <span class="panel-title">┄ PLAQUE ┄</span>
+      <div class="plaque-kind">&gt;&gt;&gt; RECORD</div>
+      <h2>ITP</h2>
+      <pre class="rule">──────────────────────────────────────────────</pre>
+      <div id="plaqueRows"></div>
+      <pre class="rule">──────────────────────────────────────────────</pre>
+      <div class="notes">&gt; First day at ITP. A tally that does not stop, gathering itself one dot at a time.</div>
+      <div class="reflection">❝ Some clocks measure waiting. This one measures becoming. ❞</div>
+      <pre class="rule">└──────────────────────────────────────────────┘</pre>
+      <div class="footer">
+        <span class="footer-tag" id="catTag"></span>
+      </div>
+    </div>
+  </div>
+
+<script src="core.js"></script>
+<script>
+(function () {
+  // === 锚定起始日:2025 年 8 月 25 日 ===
+  // 月份 0 起算,8 月 = 7
+  const STARTED_AT = new Date(2025, 7, 25, 0, 0, 0).getTime();
+
+  const SPEC = {
+    id: "itp",
+    file: "itp.html",
+    catalog: 7,
+    type: "accumulate",
+    kind: "record",
+    title: "ITP",
+    color: "#a46fa7",
+    startAt: STARTED_AT,
+    image: "ITP.png",         
+    description: "First day at ITP",
+    reflection: "Some clocks measure waiting. This one measures becoming."
+  };
+
+  // === halftone 密度参数 ===
+  // 起始时 cellSize 大(点稀疏);随天数累积 cellSize 减小(点密集、图变完整)
+  const START_CELL = 16;     // 起步:很稀疏
+  const END_CELL = 3;        // 终点:细密如印刷
+  const GRADUATION_AT = new Date(2027, 4, 15).getTime();  // 2027-05-15
+const TIMESCALE_MS = GRADUATION_AT - STARTED_AT;
+
+  function getCellSize(elapsed) {
+    const progress = Math.min(1, Math.max(0, elapsed / TIMESCALE_MS));
+    return START_CELL - (START_CELL - END_CELL) * progress;
+  }
+
+  // === 占位图(图片加载失败时显示)===
+  function makePlaceholderImage() {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+      <rect width="400" height="400" fill="#efdfd0"/>
+      <rect x="80" y="100" width="240" height="180" fill="#a86080"/>
+      <text x="200" y="350" font-family="serif" font-size="20" fill="#5a4638" text-anchor="middle" font-style="italic">specimen placeholder</text>
+    </svg>`;
+    return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+  }
+
+  // === 状态(record 类型一直走,无暂停语义复杂)===
+  if (!SPEC.startAt) SPEC.startAt = Date.now();
+  const KEY = 'TA_STATE_' + SPEC.id;
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) {}
+  if (!saved) saved = { startAt: SPEC.startAt, paused: false, pausedElapsed: 0 };
+  if (!saved.startAt) saved.startAt = SPEC.startAt;
+  function save() { localStorage.setItem(KEY, JSON.stringify(saved)); }
+
+  // === 控制按钮 ===
+  const controlsEl = document.getElementById('controls');
+  function makeBtn(label, onClick) {
+    const b = document.createElement('button');
+    b.className = 'btn'; b.textContent = label;
+    b.addEventListener('click', onClick);
+    controlsEl.appendChild(b);
+    return b;
+  }
+  let pauseBtn = makeBtn(saved.paused ? '[ ▶ RESUME ]' : '[ ▮▮ PAUSE ]', function () {
+    if (saved.paused) { saved.startAt = Date.now() - saved.pausedElapsed; saved.paused = false; }
+    else { saved.pausedElapsed = Date.now() - saved.startAt; saved.paused = true; }
+    save();
+    pauseBtn.textContent = saved.paused ? '[ ▶ RESUME ]' : '[ ▮▮ PAUSE ]';
+    render();
+  });
+  makeBtn('[ ⌖ START NOW ]', function () {
+    if (!confirm('Restart the tally from this moment?')) return;
+    saved.startAt = Date.now(); saved.paused = false; saved.pausedElapsed = 0;
+    save(); render();
+  });
+
+  // === 进度条(record 类型用 5 年作为预览范围)===
+  let scrubVal = null;
+  const sb = document.getElementById('scrubber');
+  sb.style.display = 'block';
+  const input = document.getElementById('scrubInput');
+  const max = Math.max((Date.now() - saved.startAt) * 2, 5 * 365 * 86400000);
+  input.max = max;
+  input.step = Math.max(1000, max / 1000);
+  input.value = 0;
+  input.addEventListener('input', function () {
+    scrubVal = Number(input.value);
+    document.getElementById('scrubLabel').textContent = '○ preview';
+    render();
+  });
+  input.addEventListener('dblclick', function () {
+    scrubVal = null;
+    document.getElementById('scrubLabel').textContent = '● live';
+    render();
+  });
+
+  function getElapsed() {
+    if (scrubVal != null) return scrubVal;
+    if (saved.paused) return saved.pausedElapsed;
+    return Math.max(0, Date.now() - saved.startAt);
+  }
+
+  // === 准备 halftone canvas + 下方副标题 ===
+  const clockArea = document.getElementById('clockArea');
+  const printFrame = document.createElement('div');
+  printFrame.className = 'print-frame';
+  const halftoneCanvas = document.createElement('canvas');
+  halftoneCanvas.className = 'halftone-canvas';
+  printFrame.appendChild(halftoneCanvas);
+  clockArea.appendChild(printFrame);
+
+  const captionEl = document.createElement('div');
+  captionEl.className = 'record-caption';
+  captionEl.innerHTML = `
+    <span class="day-count" id="dayCount">0</span><span class="day-label">days</span>
+    <div class="day-since">since aug 25, 2025</div>
+  `;
+  clockArea.appendChild(captionEl);
+
+  let imgLoaded = false;
+  const img = new Image();
+  img.onload = function () {
+    imgLoaded = true;
+    render();
+  };
+  img.onerror = function () {
+    img.onerror = null;
+    img.src = makePlaceholderImage();
+  };
+  img.src = SPEC.image;
+
+  // 画 halftone(每帧重画因为 cellSize 在变化)
+  const W = 420, H = 420;
+  halftoneCanvas.width = W;
+  halftoneCanvas.height = H;
+
+  function drawHalftone(elapsed) {
+    if (!imgLoaded) return;
+    const cellSize = getCellSize(elapsed);
+    if (window.TA && typeof TA.drawHalftonePhoto === 'function') {
+      TA.drawHalftonePhoto(halftoneCanvas, img, {
+        width: W, height: H, cellSize: cellSize, color: SPEC.color
+      });
+    } else {
+      const ctx = halftoneCanvas.getContext('2d');
+      ctx.fillStyle = '#efdfd0';
+      ctx.fillRect(0, 0, W, H);
+      ctx.drawImage(img, 0, 0, W, H);
+    }
+  }
+
+  // === 渲染 ===
+  function render() {
+    const elapsed = getElapsed();
+
+    drawHalftone(elapsed);
+
+    // 更新 day count
+    const t = TA.fmtDHMS(elapsed);
+    document.getElementById('dayCount').textContent = t.d;
+
+    renderPlaque(elapsed);
+  }
+
+  function renderPlaque(elapsed) {
+    const rows = [];
+    rows.push(['classification', 'ongoing tally · ' + SPEC.kind]);
+    rows.push(['began', new Date(STARTED_AT).toLocaleString('en-US', {
+      month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit'
+    })]);
+    rows.push(['elapsed', TA.formatDuration(elapsed)]);
+    rows.push(['status', saved.paused ? '○ paused' : '● in motion', !saved.paused]);
+
+    let html = '';
+    rows.forEach(function (r) {
+      html += '<div class="row"><span class="k">' + r[0] + '</span><span class="v' + (r[2] ? ' accent' : '') + '">= ' + r[1] + '</span></div>';
+    });
+    document.getElementById('plaqueRows').innerHTML = html;
+    document.getElementById('catTag').textContent = '◆ CATALOGUED · ' + new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  render();
+  // 每秒重画一次(record 类型节奏可以慢一点;halftone 每秒 redraw 不会卡)
+  setInterval(render, 1000);
+})();
+</script>
+</body>
+</html>

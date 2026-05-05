@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>SPECIMEN N° 0003 · Candle</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Roboto+Slab:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #efdfd0;
+    --ink: #2a1e16;
+    --ink-soft: #5a4638;
+    --ink-faint: #86695a;
+    --ink-dim: #b89a88;
+    --accent: #a83a2a;
+    --serif: 'Roboto Slab', Georgia, serif;
+    --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--paper); color: var(--ink);
+    font-family: var(--mono); font-size: 12.5px; line-height: 1.5;
+    min-height: 100vh;
+    background-image: radial-gradient(circle at 1px 1px, rgba(60,40,30,0.22) 0.8px, transparent 1.2px);
+    background-size: 5px 5px;
+    padding: 24px clamp(16px, 4vw, 48px) 80px;
+  }
+  pre { margin: 0; font-family: var(--mono); white-space: pre; line-height: 1.15; }
+  .tnum { font-variant-numeric: tabular-nums; }
+
+  .topbar {
+    max-width: 1200px; margin: 0 auto;
+    display: flex; justify-content: space-between; align-items: center;
+    padding-bottom: 14px; border-bottom: 1px solid var(--ink);
+  }
+  .btn {
+    background: transparent; border: 1px solid var(--ink-soft);
+    color: var(--ink); padding: 6px 12px;
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.16em;
+    cursor: pointer; text-transform: uppercase; text-decoration: none;
+    display: inline-block;
+  }
+  .btn:hover { background: var(--ink); color: var(--paper); }
+  .btn.primary { background: var(--ink); color: var(--paper); }
+  .btn.primary:hover { background: var(--accent); border-color: var(--accent); }
+  .btn.danger { color: #883535; border-color: #883535; }
+  .specnum { font-size: 11px; letter-spacing: 0.2em; color: var(--ink-faint); }
+
+  .layout {
+    max-width: 1200px; margin: 24px auto 0;
+    display: grid; grid-template-columns: 1.1fr 1fr; gap: 24px;
+  }
+  @media (max-width: 800px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+  .panel {
+    border: 1px solid var(--ink); position: relative;
+    padding: 36px 20px; background: rgba(255,255,255,0.18);
+  }
+  .panel-title {
+    position: absolute; top: -10px; left: 14px;
+    background: var(--paper); padding: 0 8px;
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.22em;
+    color: var(--ink-soft); text-transform: uppercase;
+  }
+
+  /* === 标本展示区域 === */
+  .clock-area {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 460px;
+    position: relative;
+  }
+  .clock-area canvas { display: block; }
+
+  /* === 打印式图片容器 === */
+  .print-frame {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    background: var(--paper);
+    border: 1px solid var(--ink-dim);
+    overflow: hidden;
+  }
+  .print-frame .halftone-canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    /* clip-path 控制从上往下显现 */
+    clip-path: inset(0 0 var(--clip) 0);
+    transition: clip-path 0.4s linear;
+  }
+  /* 打印头扫描线 */
+  .print-frame .scanline {
+    position: absolute;
+    left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(to bottom,
+      transparent,
+      rgba(168, 58, 42, 0.8) 40%,
+      rgba(42, 30, 22, 0.9) 50%,
+      rgba(168, 58, 42, 0.8) 60%,
+      transparent);
+    top: var(--scan-top);
+    box-shadow: 0 0 8px rgba(168, 58, 42, 0.4);
+    transition: top 0.4s linear;
+    pointer-events: none;
+    opacity: 0;
+  }
+  .print-frame.printing .scanline { opacity: 1; }
+  .print-frame.done .scanline { display: none; }
+
+  /* "等待打印"占位状态 */
+  .print-frame.idle::before {
+    content: '○ awaiting initiation';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--ink-faint);
+    z-index: 2;
+  }
+
+  /* 文字时钟(给非图片类型保留)*/
+  .clock-area .text-clock {
+    text-align: center; font-family: var(--serif); width: 100%;
+  }
+  .text-clock .num { font-size: 96px; font-weight: 500; line-height: 1; font-variant-numeric: tabular-nums; }
+  .text-clock .lbl { font-style: italic; font-size: 22px; color: var(--ink-soft); margin-top: 8px; }
+  .text-clock .small { font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; margin-top: 14px; color: var(--ink-faint); }
+
+  .controls {
+    margin-top: 22px; display: flex; gap: 8px;
+    justify-content: center; flex-wrap: wrap;
+  }
+
+  /* === 进度条 === */
+  .scrubber { margin-top: 22px; padding: 0 24px; }
+  .scrubber-row {
+    display: flex; justify-content: space-between;
+    font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.16em;
+    color: var(--ink-faint); margin-bottom: 6px; text-transform: uppercase;
+  }
+  .progress-track {
+    width: 100%; height: 6px;
+    background: rgba(42, 30, 22, 0.12);
+    position: relative;
+    cursor: pointer;
+    border: 1px solid var(--ink-dim);
+  }
+  .progress-fill {
+    position: absolute; left: 0; top: 0; bottom: 0;
+    background: var(--ink);
+    width: 0%;
+    transition: width 0.4s linear;
+  }
+  .progress-thumb {
+    position: absolute; top: 50%; transform: translate(-50%, -50%);
+    width: 12px; height: 12px;
+    background: var(--accent);
+    border: 1px solid var(--ink);
+    left: 0%;
+    transition: left 0.4s linear;
+  }
+  .scrubber.scrubbing .progress-fill,
+  .scrubber.scrubbing .progress-thumb {
+    transition: none;
+  }
+
+  /* === Plaque === */
+  .plaque {
+    padding: 24px 22px;
+  }
+  .plaque-kind {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.22em;
+    color: var(--accent); margin-bottom: 8px;
+  }
+  .plaque h2 {
+    font-family: var(--serif); font-style: italic;
+    font-size: 36px; line-height: 1.1; font-weight: 500;
+    margin: 0; color: var(--ink); letter-spacing: -0.01em;
+  }
+  .rule { color: var(--ink-dim); font-size: 12px; margin: 14px 0; }
+  .row {
+    display: grid; grid-template-columns: 140px 1fr; gap: 12px;
+    padding: 4px 0; align-items: baseline;
+    font-family: var(--mono); font-size: 12px;
+  }
+  .row .k { color: var(--ink-faint); }
+  .row .v { color: var(--ink); }
+  .row .v.accent { color: var(--accent); }
+
+  .notes {
+    font-family: var(--mono); font-size: 12px; line-height: 1.7;
+    color: var(--ink-soft);
+  }
+  .reflection {
+    margin-top: 8px; font-family: var(--serif); font-style: italic;
+    font-size: 14px; color: var(--ink);
+  }
+  .footer {
+    margin-top: 16px; display: flex; justify-content: space-between; align-items: center;
+  }
+  .footer-tag {
+    font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.18em;
+    color: var(--ink-faint); text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <a href="index.html" class="btn">[ ← BACK TO CABINET ]</a>
+    <span class="specnum">SPECIMEN N° 0002</span>
+  </div>
+
+  <div class="layout">
+    <div class="panel">
+      <span class="panel-title">┄ SPECIMEN ┄</span>
+      <div class="clock-area" id="clockArea"></div>
+      <div class="controls" id="controls"></div>
+      <div class="scrubber" id="scrubber">
+        <div class="scrubber-row">
+          <span id="elapsedLabel">00:00:00 / 12:00:00</span>
+          <span id="scrubLabel">○ idle</span>
+        </div>
+        <div class="progress-track" id="progressTrack">
+          <div class="progress-fill" id="progressFill"></div>
+          <div class="progress-thumb" id="progressThumb"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel plaque">
+      <span class="panel-title">┄ PLAQUE ┄</span>
+      <div class="plaque-kind">&gt;&gt;&gt; COUNTDOWN</div>
+      <h2>Candle</h2>
+      <pre class="rule">──────────────────────────────────────────────</pre>
+      <div id="plaqueRows"></div>
+      <pre class="rule">──────────────────────────────────────────────</pre>
+      <div class="notes">&gt; Place a tall pillar candle on a steady surface and light its wick. After around 12 hours of slow burning, only a soft pool of wax remains at the base.</div>
+      <!-- <div class="reflection">❝ A candle measures time by losing itself. ❞</div> -->
+      <pre class="rule">└──────────────────────────────────────────────┘</pre>
+      <div class="footer">
+        <span class="footer-tag" id="catTag"></span>
+      </div>
+    </div>
+  </div>
+
+<script src="core.js"></script>
+<script>
+(function () {
+  // ============================================================
+  //  通用 countdown specimen 渲染逻辑
+  //  改成其他有图片的 countdown 标本时,只需改 SPEC 对象
+  // ============================================================
+  const SPEC = {
+    id: "candle",
+    file: "Candle_Specimen.html",
+    catalog: 2,
+    type: "candle",
+    kind: "countdown",
+    title: "Candle",
+    color: "#b52b16",
+    duration: 12 * 60 * 60 * 1000,    // 12 小时
+    image: "candle.jpg",
+    description: "Place a tall pillar candle on a steady surface and light its wick. After around 12 hours of slow burning, only a soft pool of wax remains at the base."
+  }
+
+  // 固定的编目日期(显示在右下角)
+  const CATALOGUED_DATE = new Date(2026, 3, 12); // 月份从 0 开始,3 = April
+
+  // 占位图:加载 candle.jpg 失败时用这个,让你能立刻看到打印动画的效果
+  function makePlaceholderImage() {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+      <defs>
+        <radialGradient id="g" cx="50%" cy="40%" r="60%">
+          <stop offset="0%" stop-color="#e8a574"/>
+          <stop offset="60%" stop-color="#c5512a"/>
+          <stop offset="100%" stop-color="#7a3416"/>
+        </radialGradient>
+      </defs>
+      <rect width="400" height="400" fill="#efdfd0"/>
+      <ellipse cx="200" cy="220" rx="140" ry="80" fill="url(#g)"/>
+      <ellipse cx="170" cy="200" rx="20" ry="8" fill="#fff" opacity="0.3"/>
+      <text x="200" y="350" font-family="serif" font-size="20" fill="#5a4638" text-anchor="middle" font-style="italic">specimen placeholder</text>
+    </svg>`;
+    return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+  }
+
+  // === 状态:默认未启动 ===
+  const KEY = 'TA_STATE_' + SPEC.id;
+  function loadState() {
+    try { return JSON.parse(localStorage.getItem(KEY) || 'null'); }
+    catch (e) { return null; }
+  }
+  function saveState(s) { localStorage.setItem(KEY, JSON.stringify(s)); }
+
+  let saved = loadState() || {
+    startAt: null,        // null = 还没开始
+    paused: false,
+    pausedElapsed: 0,
+  };
+
+  // === 计算当前 elapsed(考虑暂停 / 拖拽 / 完成)===
+  let scrubVal = null;      // 用户拖动进度条时的临时值
+
+  function getElapsed() {
+    if (scrubVal != null) return scrubVal;
+    if (saved.startAt == null) return 0;
+    if (saved.paused) return saved.pausedElapsed;
+    const e = Date.now() - saved.startAt;
+    return Math.min(SPEC.duration, Math.max(0, e));
+  }
+
+  function isIdle()    { return saved.startAt == null && scrubVal == null; }
+  function isRunning() { return saved.startAt != null && !saved.paused && getElapsed() < SPEC.duration; }
+  function isDone()    { return saved.startAt != null && getElapsed() >= SPEC.duration; }
+
+  // === 控制按钮 ===
+  const controlsEl = document.getElementById('controls');
+  let mainBtn, resetBtn;
+
+  function rebuildButtons() {
+    controlsEl.innerHTML = '';
+
+    mainBtn = document.createElement('button');
+    mainBtn.className = 'btn primary';
+    if (isIdle())          mainBtn.textContent = '[ ▶ PLAY ]';
+    else if (saved.paused) mainBtn.textContent = '[ ▶ RESUME ]';
+    else if (isDone())     mainBtn.textContent = '[ ✓ DONE ]';
+    else                   mainBtn.textContent = '[ ▮▮ PAUSE ]';
+    if (isDone()) mainBtn.disabled = true;
+    mainBtn.addEventListener('click', toggleMain);
+    controlsEl.appendChild(mainBtn);
+
+    resetBtn = document.createElement('button');
+    resetBtn.className = 'btn';
+    resetBtn.textContent = '[ ↻ RESET ]';
+    resetBtn.addEventListener('click', reset);
+    controlsEl.appendChild(resetBtn);
+  }
+
+  function toggleMain() {
+    if (isIdle()) {
+      // 第一次点 PLAY
+      saved.startAt = Date.now();
+      saved.paused = false;
+      saved.pausedElapsed = 0;
+    } else if (saved.paused) {
+      // RESUME
+      saved.startAt = Date.now() - saved.pausedElapsed;
+      saved.paused = false;
+    } else {
+      // PAUSE
+      saved.pausedElapsed = getElapsed();
+      saved.paused = true;
+    }
+    saveState(saved);
+    rebuildButtons();
+    render();
+  }
+
+  function reset() {
+    saved = { startAt: null, paused: false, pausedElapsed: 0 };
+    scrubVal = null;
+    saveState(saved);
+    rebuildButtons();
+    render();
+  }
+
+  // === 进度条交互(可拖拽预览,松开恢复 live)===
+  const track = document.getElementById('progressTrack');
+  const fill = document.getElementById('progressFill');
+  const thumb = document.getElementById('progressThumb');
+  const scrubberEl = document.getElementById('scrubber');
+
+  let dragging = false;
+
+  function setScrubFromEvent(e) {
+    const rect = track.getBoundingClientRect();
+    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    const ratio = Math.max(0, Math.min(1, x / rect.width));
+    scrubVal = ratio * SPEC.duration;
+    render();
+  }
+  track.addEventListener('mousedown', (e) => {
+    dragging = true;
+    scrubberEl.classList.add('scrubbing');
+    setScrubFromEvent(e);
+  });
+  window.addEventListener('mousemove', (e) => {
+    if (dragging) setScrubFromEvent(e);
+  });
+  window.addEventListener('mouseup', () => {
+    if (dragging) {
+      dragging = false;
+      scrubberEl.classList.remove('scrubbing');
+      // 双击进度条会取消 scrub —— 这里改成松开后保留预览,直到用户点击控制按钮
+      // 如果想松开就回 live,把下一行注释取消:
+      // scrubVal = null;
+      render();
+    }
+  });
+  track.addEventListener('dblclick', () => {
+    scrubVal = null;
+    render();
+  });
+
+  // === 准备 halftone canvas(只画一次)===
+  const clockArea = document.getElementById('clockArea');
+  const printFrame = document.createElement('div');
+  printFrame.className = 'print-frame idle';
+  const halftoneCanvas = document.createElement('canvas');
+  halftoneCanvas.className = 'halftone-canvas';
+  const scanline = document.createElement('div');
+  scanline.className = 'scanline';
+  printFrame.appendChild(halftoneCanvas);
+  printFrame.appendChild(scanline);
+  clockArea.appendChild(printFrame);
+
+  let halftoneReady = false;
+  const img = new Image();
+  img.onload = function () {
+    // 用 core.js 的 halftone 工具把图渲染到 canvas;
+    // 如果 TA.drawHalftonePhoto 不存在,降级成普通绘制
+    const W = 480, H = 480;
+    halftoneCanvas.width = W;
+    halftoneCanvas.height = H;
+    if (window.TA && typeof TA.drawHalftonePhoto === 'function') {
+      TA.drawHalftonePhoto(halftoneCanvas, img, {
+        width: W, height: H, cellSize: 4, color: SPEC.color
+      });
+    } else {
+      // 降级:直接画图
+      const ctx = halftoneCanvas.getContext('2d');
+      ctx.fillStyle = '#efdfd0';
+      ctx.fillRect(0, 0, W, H);
+      ctx.drawImage(img, 0, 0, W, H);
+    }
+    halftoneReady = true;
+    render();
+  };
+  img.onerror = function () {
+    // candle.jpg 加载失败 → 用占位图,这样你还没准备好图片时也能预览效果
+    img.onerror = null; // 防止循环
+    img.src = makePlaceholderImage();
+  };
+  img.src = SPEC.image;
+
+  // === 渲染 ===
+  function render() {
+    const elapsed = getElapsed();
+    const progress = Math.min(1, elapsed / SPEC.duration);
+
+    // --- 打印式显现 ---
+    if (halftoneReady) {
+      // clip-path 从下往上"显现":未显现部分从底部裁掉
+      // progress = 0 → 整张被裁掉(100%);progress = 1 → 完全显现(0%)
+      const clipPercent = (1 - progress) * 100;
+      halftoneCanvas.style.setProperty('--clip', clipPercent + '%');
+
+      // 扫描线位置 = 显现的边界(从上往下推)
+      // scanline.style.setProperty('--scan-top', (progress * 100) + '%');
+
+      // 状态 class
+      printFrame.classList.toggle('idle', isIdle());
+      printFrame.classList.toggle('printing', isRunning());
+      printFrame.classList.toggle('done', progress >= 1);
+    }
+
+    // --- 进度条 ---
+    fill.style.width = (progress * 100) + '%';
+    thumb.style.left = (progress * 100) + '%';
+
+    // --- 标签 ---
+    const elapsedStr = fmtMS(elapsed);
+    const totalStr = fmtMS(SPEC.duration);
+    document.getElementById('elapsedLabel').textContent = elapsedStr + ' / ' + totalStr;
+
+    let scrubLabel;
+    if (scrubVal != null) scrubLabel = '◇ preview';
+    else if (isIdle())    scrubLabel = '○ idle';
+    else if (saved.paused) scrubLabel = '▮▮ paused';
+    else if (isDone())    scrubLabel = '✓ done';
+    else                  scrubLabel = '● live';
+    document.getElementById('scrubLabel').textContent = scrubLabel;
+
+    // --- Plaque ---
+    renderPlaque(elapsed);
+  }
+
+  // 改成 HH:MM:SS 格式以适应 12 小时时长
+  function fmtMS(ms) {
+    const total = Math.max(0, Math.floor(ms / 1000));
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const s = total % 60;
+    return pad(h) + ':' + pad(m) + ':' + pad(s);
+  }
+  function pad(n) { return ('0' + n).slice(-2); }
+
+  function renderPlaque(elapsed) {
+    const rows = [];
+    rows.push(['classification', 'countdown']);
+    rows.push(['duration', fmtMS(SPEC.duration)]);
+    if (saved.startAt != null) {
+      rows.push(['began', new Date(saved.startAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })]);
+    } else {
+      rows.push(['began', '— awaiting —']);
+    }
+    rows.push(['elapsed', fmtMS(elapsed)]);
+    let statusLabel, isAccent;
+    if (isIdle())          { statusLabel = '○ idle';      isAccent = false; }
+    else if (saved.paused) { statusLabel = '▮▮ paused';    isAccent = false; }
+    else if (isDone())     { statusLabel = '✓ complete';  isAccent = true; }
+    else                   { statusLabel = '● in motion'; isAccent = true; }
+    rows.push(['status', statusLabel, isAccent]);
+
+    let html = '';
+    rows.forEach(function (r) {
+      html += '<div class="row"><span class="k">' + r[0] + '</span><span class="v' + (r[2] ? ' accent' : '') + '">= ' + r[1] + '</span></div>';
+    });
+    document.getElementById('plaqueRows').innerHTML = html;
+    // 用固定的编目日期,不再用 new Date()(当下日期)
+    document.getElementById('catTag').textContent = '◆ CATALOGUED · ' + CATALOGUED_DATE.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  // === 启动 ===
+  rebuildButtons();
+  render();
+  setInterval(function () {
+    // 只在 running 时持续重绘
+    if (isRunning() || scrubVal != null) {
+      render();
+    } else if (isDone() && !mainBtn.disabled) {
+      // 刚刚跑完,刷新按钮状态
+      rebuildButtons();
+      render();
+    }
+  }, 1000);
+})();
+</script>
+</body>
+</html>

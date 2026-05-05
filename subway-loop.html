@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>SPECIMEN N° 0004 · The next train, again</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Roboto+Slab:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #efdfd0; --ink: #2a1e16;
+    --ink-soft: #5a4638; --ink-faint: #86695a;
+    --ink-dim: #b89a88; --accent: #a83a2a;
+    --serif: 'Roboto Slab', Georgia, serif;
+    --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--paper); color: var(--ink);
+    font-family: var(--mono); font-size: 12.5px; line-height: 1.5;
+    min-height: 100vh;
+    background-image: radial-gradient(circle at 1px 1px, rgba(60,40,30,0.22) 0.8px, transparent 1.2px);
+    background-size: 5px 5px;
+    padding: 24px clamp(16px, 4vw, 48px) 80px;
+  }
+  pre { margin: 0; font-family: var(--mono); white-space: pre; line-height: 1.15; }
+  .topbar {
+    max-width: 1200px; margin: 0 auto;
+    display: flex; justify-content: space-between; align-items: center;
+    padding-bottom: 14px; border-bottom: 1px solid var(--ink);
+  }
+  .btn {
+    background: transparent; border: 1px solid var(--ink-soft);
+    color: var(--ink); padding: 6px 12px;
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.16em;
+    cursor: pointer; text-transform: uppercase; text-decoration: none;
+    display: inline-block;
+  }
+  .btn:hover { background: var(--ink); color: var(--paper); }
+  .specnum { font-size: 11px; letter-spacing: 0.2em; color: var(--ink-faint); }
+  .layout {
+    max-width: 1200px; margin: 24px auto 0;
+    display: grid; grid-template-columns: 1.1fr 1fr; gap: 24px;
+  }
+  @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
+  .panel {
+    border: 1px solid var(--ink); position: relative;
+    padding: 36px 20px; background: rgba(255,255,255,0.18);
+  }
+  .panel-title {
+    position: absolute; top: -10px; left: 14px;
+    background: var(--paper); padding: 0 8px;
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.22em;
+    color: var(--ink-soft); text-transform: uppercase;
+  }
+  .clock-area {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 460px;
+  }
+  .clock-area canvas { display: block; }
+  .clock-area .text-clock { text-align: center; font-family: var(--serif); width: 100%; }
+  .text-clock .num { font-size: 96px; font-weight: 500; line-height: 1; font-variant-numeric: tabular-nums; }
+  .text-clock .lbl { font-style: italic; font-size: 22px; font-weight: 300; color: var(--ink-soft); margin-top: 8px; }
+  .text-clock .small { font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; margin-top: 14px; color: var(--ink-faint); }
+  .controls { margin-top: 22px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .scrubber { margin-top: 18px; padding: 0 24px; }
+  .scrubber-row {
+    display: flex; justify-content: space-between;
+    font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.16em;
+    color: var(--ink-faint); margin-bottom: 4px; text-transform: uppercase;
+  }
+  .scrubber input[type=range] { width: 100%; accent-color: var(--accent); }
+  .plaque-kind {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.22em;
+    color: var(--accent); margin-bottom: 8px;
+  }
+  .plaque h2 {
+    font-family: var(--serif); font-style: italic;
+    font-size: 36px; line-height: 1.1; font-weight: 500;
+    margin: 0; color: var(--ink); letter-spacing: -0.01em;
+  }
+  .rule { color: var(--ink-dim); font-size: 12px; margin: 14px 0; }
+  .row {
+    display: grid; grid-template-columns: 140px 1fr; gap: 12px;
+    padding: 4px 0; align-items: baseline;
+    font-family: var(--mono); font-size: 12px;
+  }
+  .row .k { color: var(--ink-faint); }
+  .row .v { color: var(--ink); }
+  .row .v.accent { color: var(--accent); }
+  .notes { font-family: var(--mono); font-size: 12px; line-height: 1.7; color: var(--ink-soft); }
+  .reflection { margin-top: 8px; font-family: var(--serif); font-style: italic; font-size: 14px; color: var(--ink); }
+  .footer { margin-top: 16px; display: flex; justify-content: space-between; align-items: center; }
+  .footer-tag { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.18em; color: var(--ink-faint); text-transform: uppercase; }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <a href="index.html" class="btn">[ ← BACK TO CABINET ]</a>
+    <span class="specnum">SPECIMEN N° 0004</span>
+  </div>
+
+  <div class="layout">
+    <div class="panel">
+      <span class="panel-title">┄ SPECIMEN ┄</span>
+      <div class="clock-area" id="clockArea"></div>
+      <div class="controls" id="controls"></div>
+      <div class="scrubber" id="scrubber" style="display:none;">
+        <div class="scrubber-row">
+          <span>◁ scrub</span>
+          <span id="scrubLabel">● live</span>
+        </div>
+        <input type="range" id="scrubInput" min="0" step="1000" />
+      </div>
+    </div>
+
+    <div class="panel plaque">
+      <span class="panel-title">┄ PLAQUE ┄</span>
+      <div class="plaque-kind">&gt;&gt;&gt; LOOP</div>
+      <h2>the next train, again</h2>
+      <pre class="rule">──────────────────────────────────────────────</pre>
+      <div id="plaqueRows"></div>
+      <pre class="rule">──────────────────────────────────────────────</pre>
+      <div class="notes">The train will come, but usually not on time</div>
+      <pre class="rule">└──────────────────────────────────────────────┘</pre>
+      <div class="footer">
+        <span class="footer-tag" id="catTag"></span>
+      </div>
+    </div>
+  </div>
+
+<script src="core.js"></script>
+<script>
+(function () {
+  const SPEC = {"id":"subway-loop","file":"subway-loop.html","catalog":2,"type":"digital_loop","kind":"loop","title":"The next train, again","color":"#3a8a5a","duration":360000,"description":"The train will come, but usually not on time",};
+
+  // 倒计时到这个值时重置(60000 ms = 1 分钟)
+  const RESET_AT_MS = 60000;
+  // 实际循环周期 = 总时长 - 重置点(从 6:00 数到 1:00,共 5 分钟)
+  const CYCLE_DUR = SPEC.duration - RESET_AT_MS;
+
+  if (!SPEC.startAt) SPEC.startAt = Date.now();
+  const KEY = 'TA_STATE_' + SPEC.id;
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) {}
+  if (!saved) saved = { startAt: SPEC.startAt, paused: false, pausedElapsed: 0 };
+  if (!saved.startAt) saved.startAt = SPEC.startAt;
+  function save() { localStorage.setItem(KEY, JSON.stringify(saved)); }
+
+  const isAnchor = false;
+  const isText = SPEC.kind === 'record' || SPEC.kind === 'anchor';
+
+  const controlsEl = document.getElementById('controls');
+  function makeBtn(label, onClick) {
+    const b = document.createElement('button');
+    b.className = 'btn'; b.textContent = label;
+    b.addEventListener('click', onClick);
+    controlsEl.appendChild(b);
+    return b;
+  }
+  let pauseBtn = null;
+  if (!isAnchor) {
+    pauseBtn = makeBtn(saved.paused ? '[ ▶ RESUME ]' : '[ ▮▮ PAUSE ]', function () {
+      if (saved.paused) {
+        // RESUME:从当前 pausedElapsed 位置继续走
+        saved.startAt = Date.now() - saved.pausedElapsed;
+        saved.paused = false;
+      } else {
+        // PAUSE:在当前显示位置停下(如果正在拖动就用拖动值,否则用 live 值)
+        saved.pausedElapsed = (scrubVal != null) ? scrubVal : (Date.now() - saved.startAt);
+        saved.paused = true;
+        scrubVal = null; // 退出 preview 模式,改成用 pausedElapsed
+      }
+      save();
+      pauseBtn.textContent = saved.paused ? '[ ▶ RESUME ]' : '[ ▮▮ PAUSE ]';
+      render();
+    });
+    makeBtn('[ ↻ RESET ]', function () {
+      saved.startAt = Date.now(); saved.paused = false; saved.pausedElapsed = 0;
+      save();
+      if (pauseBtn) pauseBtn.textContent = '[ ▮▮ PAUSE ]';
+      render();
+    });
+  }
+  if (SPEC.kind === 'record') {
+    makeBtn('[ ⌖ START NOW ]', function () {
+      if (!confirm('Restart the tally from this moment?')) return;
+      saved.startAt = Date.now(); saved.paused = false; saved.pausedElapsed = 0;
+      save(); render();
+    });
+  }
+
+  let scrubVal = null;
+  if (!isAnchor) {
+    const sb = document.getElementById('scrubber');
+    sb.style.display = 'block';
+    const input = document.getElementById('scrubInput');
+    // 让 scrubber 的范围对应一个完整的循环周期
+    const max = SPEC.kind === 'record'
+      ? Math.max((Date.now() - saved.startAt) * 2, 5 * 365 * 86400000)
+      : (SPEC.type === 'digital_loop' ? CYCLE_DUR : (SPEC.duration || 60000));
+    input.max = max;
+    input.step = Math.max(1000, max / 1000);
+    input.value = 0;
+    input.addEventListener('input', function () {
+      const v = Number(input.value);
+      if (saved.paused) {
+        // 暂停状态下:拖动直接更新暂停位置
+        saved.pausedElapsed = v;
+      } else {
+        // 播放状态下:拖动是 preview,松手回 live
+        scrubVal = v;
+      }
+      render();
+    });
+    // 松手处理:暂停时只保存进度,播放时回到 live 模式
+    function onScrubRelease() {
+      if (saved.paused) {
+        save(); // 暂停拖动后,松手时把新位置存进 localStorage
+        render();
+        return;
+      }
+      scrubVal = null;
+      render();
+    }
+    input.addEventListener('mouseup', onScrubRelease);
+    input.addEventListener('touchend', onScrubRelease);
+    input.addEventListener('dblclick', onScrubRelease);
+  }
+
+  const clockArea = document.getElementById('clockArea');
+  function getElapsed() {
+    if (scrubVal != null) return scrubVal;
+    if (saved.paused) return saved.pausedElapsed;
+    return Math.max(0, Date.now() - saved.startAt);
+  }
+
+  function render() {
+    const elapsed = getElapsed();
+    if (isText) renderText(elapsed);
+    else renderCanvas(elapsed);
+    renderPlaque(elapsed);
+
+    // 同步滑块位置 + 状态标签
+    if (!isAnchor) {
+      const input = document.getElementById('scrubInput');
+      const label = document.getElementById('scrubLabel');
+      if (input && scrubVal == null) {
+        // 不在拖动时,让滑块自动跟着当前位置走
+        let livePos;
+        if (SPEC.type === 'digital_loop') {
+          livePos = elapsed % CYCLE_DUR;
+        } else {
+          livePos = Math.min(elapsed, Number(input.max));
+        }
+        input.value = livePos;
+      }
+      if (label) {
+        if (scrubVal != null)      label.textContent = '○ preview';
+        else if (saved.paused)     label.textContent = '▮▮ paused';
+        else                       label.textContent = '● live';
+      }
+    }
+  }
+
+  let clockCanvas = null;
+  function renderCanvas(elapsed) {
+    if (!clockCanvas) {
+      clockArea.innerHTML = '';
+      clockCanvas = document.createElement('canvas');
+      clockArea.appendChild(clockCanvas);
+    }
+    const sizes = {
+      sweet_potato: { w: 480, h: 300 },
+      digital_loop: { w: 480, h: 220 },
+    };
+    const sz = sizes[SPEC.type] || { w: 320, h: 320 };
+    const params = { width: sz.w, height: sz.h, color: SPEC.color, cellSize: 3.4 };
+    if (SPEC.type === 'sweet_potato') {
+      params.progress = Math.min(1, elapsed / SPEC.duration);
+    } else if (SPEC.type === 'digital_loop') {
+      // 在 1 分钟剩余时重置:用 5 分钟周期循环,但显示从 6:00 开始倒数到 1:00
+      const pos = elapsed % CYCLE_DUR;
+      params.remainMs = SPEC.duration - pos;
+    }
+    TA.renderClock(clockCanvas, SPEC.type, params);
+  }
+
+  function renderText(elapsed) {
+    const tc = (content) => '<div class="text-clock" style="color:' + SPEC.color + ';">' + content + '</div>';
+    let html = '';
+    if (SPEC.kind === 'record') {
+      const t = TA.fmtDHMS(elapsed);
+      html = tc('<div class="num">' + t.d + '</div><div class="lbl">days</div><div class="small">' + TA.pad(t.h)+':'+TA.pad(t.m)+':'+TA.pad(t.s) + '</div>');
+    } else if (SPEC.kind === 'anchor') {
+      const d = new Date(SPEC.startAt);
+      html = tc('<div class="small">◆ ANCHORED ◆</div><div class="lbl" style="margin-top:14px;">' + d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) + '</div><div class="num" style="font-size:54px;margin-top:8px;">' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }) + '</div>');
+    }
+    clockArea.innerHTML = html;
+  }
+
+  function renderPlaque(elapsed) {
+    const rows = [];
+    rows.push(['classification', 'digital loop · ' + SPEC.kind]);
+    rows.push(['duration', TA.formatDuration(360000)]);
+    rows.push(['began', new Date(saved.startAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })]);
+    if (SPEC.kind === 'record') rows.push(['elapsed', TA.formatDuration(elapsed)]);
+    if (!isAnchor) rows.push(['status', saved.paused ? '○ paused' : '● in motion', !saved.paused]);
+    let html = '';
+    rows.forEach(function (r) {
+      html += '<div class="row"><span class="k">' + r[0] + '</span><span class="v' + (r[2] ? ' accent' : '') + '">= ' + r[1] + '</span></div>';
+    });
+    document.getElementById('plaqueRows').innerHTML = html;
+    document.getElementById('catTag').textContent = '◆ CATALOGUED · ' + new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  render();
+  const interval = SPEC.type === 'digital_loop' ? 100 : (isAnchor ? 60000 : 1000);
+  setInterval(render, interval);
+})();
+</script>
+</body>
+</html>

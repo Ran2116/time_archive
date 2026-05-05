@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>THE TIME ARCHIVE</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Roboto+Slab:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #efdfd0;
+    --ink: #2a1e16;
+    --ink-soft: #5a4638;
+    --ink-faint: #86695a;
+    --ink-dim: #b89a88;
+    --accent: #a83a2a;
+    --serif: 'Roboto Slab', Georgia, serif;
+    --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.5;
+    min-height: 100vh;
+    background-image: radial-gradient(circle at 1px 1px, rgba(60,40,30,0.22) 0.8px, transparent 1.2px);
+    background-size: 5px 5px;
+  }
+  pre { margin: 0; font-family: var(--mono); white-space: pre; line-height: 1.15; }
+  .tnum { font-variant-numeric: tabular-nums; }
+  .cursor { display: inline-block; width: 0.55em; height: 1em; background: var(--ink); vertical-align: -0.15em; animation: blink 1.1s steps(2) infinite; margin-left: 2px; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 28px clamp(16px, 3vw, 36px) 120px; }
+
+  .top {
+    display: flex; justify-content: space-between;
+    font-size: 10.5px; letter-spacing: 0.22em;
+    color: var(--ink-faint); text-transform: uppercase;
+  }
+  h1 {
+    font-family: var(--mono); font-weight: 700;
+    font-size: clamp(34px, 4.2vw, 54px); letter-spacing: 0.02em;
+    margin: 14px 0 4px; color: var(--ink); line-height: 1;
+  }
+  .tagline { font-size: 13px; color: var(--ink-soft); letter-spacing: 0.04em; }
+
+  /* === Filter tab 菜单 === */
+  .menu {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    padding: 24px 0 18px;
+    font-size: 11px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--ink-soft);
+    border-bottom: 1px solid var(--ink-dim);
+    margin-bottom: 0;
+  }
+  .menu .label { color: var(--ink-faint); }
+  .menu button {
+    background: transparent; color: var(--ink-soft);
+    border: none; padding: 2px 8px;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em;
+    text-transform: uppercase; cursor: pointer;
+  }
+  .menu button.active { background: var(--ink); color: var(--paper); }
+  .menu .count { margin-left: auto; color: var(--ink-faint); }
+  .menu .count b { color: var(--ink); font-weight: 400; }
+
+  /* === Flexbox 砖墙 === */
+  .cabinet { padding: 0; }
+  .grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+  }
+
+  /* 三种宽度档位 — flex-grow 让每行自动填满 */
+  .cell {
+    height: 320px;
+    border-right: 1px dashed var(--ink-dim);
+    border-bottom: 1px dashed var(--ink-dim);
+    position: relative;
+    cursor: pointer;
+    display: flex; flex-direction: column;
+    padding: 22px 22px 16px;
+    transition: background 0.2s;
+    text-decoration: none; color: inherit;
+    overflow: hidden;
+  }
+  .cell.size-s { flex: 1 1 240px; }
+  .cell.size-m { flex: 1.4 1 320px; }
+  .cell.size-l { flex: 2 1 460px; }
+  .cell:hover { background: rgba(255,255,255,0.18); }
+
+  /* 响应式:窄屏强制单列 */
+  @media (max-width: 600px) {
+    .cell.size-s, .cell.size-m, .cell.size-l { flex: 1 1 100%; }
+  }
+
+  .corner {
+    display: flex; justify-content: space-between;
+    font-size: 10px; letter-spacing: 0.22em;
+    color: var(--ink-faint); text-transform: uppercase;
+    z-index: 3;
+  }
+  .corner .kind { color: var(--accent); }
+
+  .clock-area {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    padding: 8px 0; overflow: hidden; min-height: 200px;
+    position: relative;
+  }
+  .clock-area canvas, .clock-area img { display: block; max-width: 100%; max-height: 100%; }
+  .text-clock {
+    text-align: center;
+    font-family: var(--serif);
+    width: 100%;
+  }
+  .text-clock .num {
+    font-size: 64px; font-weight: 500; line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .text-clock .lbl {
+    font-style: italic; font-size: 16px;
+    color: var(--ink-soft); margin-top: 6px;
+  }
+  .text-clock .small {
+    font-family: var(--mono); font-size: 10px;
+    letter-spacing: 0.18em; margin-top: 8px;
+    color: var(--ink-faint);
+  }
+
+  .cell-label {
+    margin-top: 8px;
+    font-family: var(--serif); font-style: italic;
+    font-size: 16px; color: var(--ink);
+    line-height: 1.3;
+  }
+
+  /* === Anchor 标本 === */
+  .anchor-photo {
+    position: relative;
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .anchor-photo .photo-bg {
+    position: absolute; inset: 0;
+    overflow: hidden;
+  }
+  .anchor-photo .photo-bg img {
+    width: 100%; height: 100%; object-fit: cover;
+    opacity: 0.75;
+  }
+  .anchor-photo .plaque {
+    position: relative;
+    background: rgba(239, 223, 208, 0.94);
+    border: 1px solid var(--ink);
+    padding: 10px 16px;
+    text-align: center;
+    font-family: var(--serif);
+    box-shadow: 2px 2px 0 var(--ink-dim);
+    z-index: 2;
+    max-width: 80%;
+  }
+  .anchor-photo .plaque .mark {
+    font-family: var(--mono); font-size: 8px;
+    letter-spacing: 0.22em; color: var(--accent);
+    margin-bottom: 4px;
+  }
+  .anchor-photo .plaque .date {
+    font-size: 16px; font-weight: 500;
+    color: var(--ink);
+  }
+  .anchor-photo .plaque .time {
+    font-family: var(--mono); font-size: 11px;
+    letter-spacing: 0.1em; color: var(--ink-soft);
+    margin-top: 2px;
+  }
+
+  .status {
+    margin-top: 4px; padding: 14px 4px 0;
+    border-top: 1px solid var(--ink-dim);
+    display: flex; justify-content: space-between;
+    font-size: 10.5px; letter-spacing: 0.16em;
+    color: var(--ink-faint); text-transform: uppercase;
+  }
+
+  .fab {
+    position: fixed; right: 26px; bottom: 26px;
+    border: 1px solid var(--ink); background: var(--paper);
+    color: var(--ink); font-family: var(--mono);
+    font-size: 11px; letter-spacing: 0.18em; padding: 10px 18px;
+    cursor: pointer; text-transform: uppercase; z-index: 20;
+    box-shadow: 3px 3px 0 var(--ink-dim);
+    text-decoration: none;
+  }
+  .fab:hover { background: var(--ink); color: var(--paper); }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <span>/// TIME · ARCHIVE · SYSTEM ///</span>
+      <span class="tnum" id="sysclock"></span>
+    </div>
+    <h1>The TIME ARCHIVE</h1>
+    <div class="tagline">a collective catalogue of measured time<span class="cursor"></span></div>
+
+    <div class="menu">
+      <span class="label">&gt; FILTER:</span>
+      <button data-filter="all" class="active">[ALL]</button>
+      <button data-filter="countdown">[COUNTDOWN]</button>
+      <button data-filter="loop">[LOOP]</button>
+      <button data-filter="anchor">[ANCHOR]</button>
+      <button data-filter="record">[RECORD]</button>
+      <span class="count">SPECIMENS: <b class="tnum" id="specCount">000</b></span>
+    </div>
+
+    <div class="cabinet">
+      <div class="grid" id="grid"></div>
+    </div>
+
+    <div class="status">
+      <span>● <span id="totalCount">0</span> specimens catalogued · live</span>
+      <span id="tickStatus">█ tick · tick · tick</span>
+    </div>
+  </div>
+
+  <a href="create.html" class="fab">[ + NEW SPECIMEN ]</a>
+
+<script src="core.js"></script>
+<script src="specimens.js"></script>
+<script>
+(function () {
+  // === 系统时钟 ===
+  function updateSysClock() {
+    const now = new Date();
+    const t = now.toLocaleTimeString('en-US', { hour12: false });
+    const d = now.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '.');
+    document.getElementById('sysclock').textContent = 'SYS.CLOCK ' + t + ' · ' + d;
+  }
+  setInterval(updateSysClock, 1000); updateSysClock();
+
+  let blink = true;
+  setInterval(function () {
+    blink = !blink;
+    document.getElementById('tickStatus').style.opacity = blink ? '1' : '0.35';
+  }, 600);
+
+  // === 加载用户标本 ===
+  function loadUserSpecs() {
+    try { return JSON.parse(localStorage.getItem('TA_USER_SPECIMENS') || '[]'); }
+    catch (e) { return []; }
+  }
+
+  const builtin = window.TA_BUILTIN_SPECIMENS || [];
+  const user = loadUserSpecs();
+  // 合并:示例在前,用户上传按时间顺序追加
+  const all = builtin.concat(user);
+  document.getElementById('specCount').textContent = TA.pad(all.length, 3);
+  document.getElementById('totalCount').textContent = all.length;
+
+  // === Canvas 时钟宽高比 ===
+  const ASPECT = {
+    sweet_potato: 1.55,
+    digital_loop: 2.2,
+  };
+
+  // === 砖墙尺寸分配 ===
+  // 用 hash 让同一个 spec 始终拿到同一个 size,但整体看起来随机
+  // 三个档位的目标比例约 30% L / 40% M / 30% S
+  function pickSize(spec) {
+    if (spec.size) return 'size-' + spec.size;  // 允许 spec 手动指定
+    // 用 catalog + id 做简单 hash
+    const seed = (spec.catalog || 0) + (spec.id || '').length * 7;
+    const r = (seed * 9301 + 49297) % 233280 / 233280;  // 0~1 伪随机
+    if (r < 0.3) return 'size-l';
+    if (r < 0.7) return 'size-m';
+    return 'size-s';
+  }
+
+  // === 创建一个 cell ===
+  function makeCell(spec) {
+    const a = document.createElement('a');
+    const kind = spec.kind || TA.kindOf(spec.type);
+    a.className = 'cell ' + pickSize(spec);
+    a.href = spec.file || ('custom.html?id=' + encodeURIComponent(spec.id));
+    a.dataset.kind = kind;
+
+    const corner = document.createElement('div');
+    corner.className = 'corner';
+    corner.innerHTML =
+      '<span>NO. ' + TA.pad4(spec.catalog) + '</span>' +
+      '<span class="kind">[' + kind + ']</span>';
+    a.appendChild(corner);
+
+    const area = document.createElement('div');
+    area.className = 'clock-area';
+    a.appendChild(area);
+
+    if (spec.title) {
+      const label = document.createElement('div');
+      label.className = 'cell-label';
+      label.textContent = spec.title;
+      a.appendChild(label);
+    }
+
+    requestAnimationFrame(function () {
+      const w = area.clientWidth;
+      const h = area.clientHeight;
+      if (!w || !h) return;
+      renderInto(area, spec, w, h);
+    });
+
+    return a;
+  }
+
+  // === 渲染分发 ===
+  function renderInto(area, spec, w, h) {
+    area.innerHTML = '';
+    // 优先:有 image 字段就走 halftone(不管 type/kind 是啥)
+    if (spec.image) return renderPhoto(area, spec, w, h);
+    if (spec.type === 'accumulate') return renderAccumulate(area, spec);
+    if (spec.type === 'fixed' || spec.kind === 'anchor') return renderAnchor(area, spec);
+  
+    const aspect = ASPECT[spec.type] || 1;
+    let cw = w, ch = w / aspect;
+    if (ch > h) { ch = h; cw = ch * aspect; }
+    cw = Math.max(40, cw); ch = Math.max(40, ch);
+    const canvas = document.createElement('canvas');
+    area.appendChild(canvas);
+    drawAndAnimate(canvas, spec, cw, ch);
+  }
+
+  function drawAndAnimate(canvas, spec, w, h) {
+    function frame() {
+      const elapsed = Date.now() - spec.startAt;
+      const params = { width: w, height: h, color: spec.color, cellSize: 3.2 };
+      if (spec.type === 'sweet_potato') {
+        params.progress = Math.min(1, elapsed / spec.duration);
+      } else if (spec.type === 'digital_loop') {
+        const pos = elapsed % spec.duration;
+        params.remainMs = spec.duration - pos;
+      }
+      TA.renderClock(canvas, spec.type, params);
+    }
+    frame();
+    setInterval(frame, spec.type === 'digital_loop' ? 100 : 1000);
+  }
+
+  function renderAccumulate(area, spec) {
+    const div = document.createElement('div');
+    div.className = 'text-clock';
+    div.style.color = spec.color;
+    area.appendChild(div);
+    function update() {
+      const t = TA.fmtDHMS(Date.now() - spec.startAt);
+      div.innerHTML = '<div class="num">' + t.d + '</div><div class="lbl">days</div><div class="small">' + TA.pad(t.h)+':'+TA.pad(t.m)+':'+TA.pad(t.s) + '</div>';
+    }
+    update();
+    setInterval(update, 1000);
+  }
+
+  // ANCHOR: 图(可选)+ 纪念牌
+  function renderAnchor(area, spec) {
+    const wrap = document.createElement('div');
+    wrap.className = 'anchor-photo';
+    area.appendChild(wrap);
+
+    if (spec.image) {
+      const bg = document.createElement('div');
+      bg.className = 'photo-bg';
+      const img = document.createElement('img');
+      img.src = spec.image;
+      bg.appendChild(img);
+      wrap.appendChild(bg);
+    }
+
+    const d = new Date(spec.startAt);
+    const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const timeStr = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+    const plaque = document.createElement('div');
+    plaque.className = 'plaque';
+    plaque.innerHTML =
+      '<div class="mark">◆ ANCHORED ◆</div>' +
+      '<div class="date">' + dateStr + '</div>' +
+      '<div class="time">' + timeStr + '</div>';
+    wrap.appendChild(plaque);
+  }
+
+  function renderPhoto(area, spec, w, h) {
+    if (!spec.image) return;
+    const sz = Math.min(w, h) - 10;
+    const canvas = document.createElement('canvas');
+    area.appendChild(canvas);
+    const img = new Image();
+    const k = spec.kind || TA.kindOf(spec.type);
+    img.onload = function () {
+      function frame() {
+        const elapsed = Date.now() - spec.startAt;
+        let opacity = 1;
+        let cellSize = 4;  // 默认值
+        if (k === 'countdown') {
+          opacity = Math.max(0.05, 1 - elapsed / spec.duration);
+        } else if (k === 'record') {
+          // record:cellSize 随时间变小,点点越来越多(跟 specimen 页面一致)
+          const TS = 2 * 365 * 86400000; // 2 年(可改)
+          const progress = Math.min(1, Math.max(0, elapsed / TS));
+          cellSize = 14 - (14 - 4) * progress; // 14 → 4
+        } else if (k === 'loop') {
+          const period = spec.duration || 60000;
+          const t = (elapsed % period) / period;
+          opacity = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(t * Math.PI * 2));
+        }
+        canvas.style.opacity = opacity;
+        TA.drawHalftonePhoto(canvas, img, { width: sz, height: sz, cellSize: cellSize, color: spec.color });
+        canvas.style.width = sz + 'px';
+        canvas.style.height = sz + 'px';
+      }
+      frame();
+      if (k !== 'anchor') setInterval(frame, 1000);
+    };
+    img.src = spec.image;
+}
+
+  // === 构建陈列柜 ===
+  const grid = document.getElementById('grid');
+  all.forEach(function (spec) {
+    grid.appendChild(makeCell(spec));
+  });
+
+  // === Filter ===
+  const buttons = document.querySelectorAll('.menu button');
+  buttons.forEach(function (b) {
+    b.addEventListener('click', function () {
+      buttons.forEach(function (x) { x.classList.remove('active'); });
+      b.classList.add('active');
+      const f = b.dataset.filter;
+      document.querySelectorAll('.cell').forEach(function (c) {
+        c.style.display = (f === 'all' || c.dataset.kind === f) ? '' : 'none';
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>

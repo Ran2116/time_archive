@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>NEW SPECIMEN · THE TIME ARCHIVE</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Cormorant+Garamond:ital,wght@0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #efdfd0; --ink: #2a1e16;
+    --ink-soft: #5a4638; --ink-faint: #86695a;
+    --ink-dim: #b89a88; --accent: #a83a2a;
+    --serif: 'Cormorant Garamond', Georgia, serif;
+    --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--paper); color: var(--ink);
+    font-family: var(--mono); font-size: 12.5px; line-height: 1.5;
+    min-height: 100vh;
+    background-image: radial-gradient(circle at 1px 1px, rgba(60,40,30,0.22) 0.8px, transparent 1.2px);
+    background-size: 5px 5px;
+    padding: 24px clamp(16px, 4vw, 48px) 80px;
+  }
+  pre { margin: 0; font-family: var(--mono); white-space: pre; line-height: 1.15; }
+  .topbar {
+    max-width: 1200px; margin: 0 auto;
+    display: flex; justify-content: space-between; align-items: center;
+    padding-bottom: 14px; border-bottom: 1px solid var(--ink);
+  }
+  .btn {
+    background: transparent; border: 1px solid var(--ink-soft);
+    color: var(--ink); padding: 8px 14px;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em;
+    cursor: pointer; text-transform: uppercase;
+    text-decoration: none; display: inline-block;
+  }
+  .btn:hover { background: var(--ink); color: var(--paper); }
+  .btn.primary { background: var(--ink); color: var(--paper); }
+  .btn.primary:hover { background: var(--accent); border-color: var(--accent); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .specnum { font-size: 11px; letter-spacing: 0.2em; color: var(--ink-faint); }
+
+  .layout {
+    max-width: 1200px; margin: 24px auto 0;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+  }
+  @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
+
+  .panel {
+    border: 1px solid var(--ink); position: relative;
+    padding: 36px 22px 22px; background: rgba(255,255,255,0.18);
+  }
+  .panel-title {
+    position: absolute; top: -10px; left: 14px;
+    background: var(--paper); padding: 0 8px;
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.22em;
+    color: var(--ink-soft); text-transform: uppercase;
+  }
+
+  .preview {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 460px;
+    cursor: pointer;
+    position: relative;
+  }
+  .preview canvas { display: block; max-width: 100%; pointer-events: none; }
+
+  .preview .empty {
+    border: 1px dashed var(--ink-dim);
+    width: 100%; height: 380px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--ink-faint);
+    font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .preview:hover .empty {
+    border-color: var(--ink);
+    color: var(--ink);
+  }
+  .preview.has-image::after {
+    content: '◇ click to replace';
+    position: absolute;
+    bottom: 12px; left: 50%;
+    transform: translateX(-50%);
+    background: rgba(42, 30, 22, 0.88);
+    color: var(--paper);
+    font-family: var(--mono); font-size: 10px;
+    letter-spacing: 0.2em; padding: 6px 12px;
+    text-transform: uppercase;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+  }
+  .preview.has-image:hover::after { opacity: 1; }
+
+  /* 顶部模式提示标签 */
+  .preview-mode {
+    position: absolute;
+    top: 12px; left: 50%;
+    transform: translateX(-50%);
+    background: rgba(42, 30, 22, 0.88);
+    color: var(--paper);
+    font-family: var(--mono); font-size: 9px;
+    letter-spacing: 0.22em; padding: 4px 10px;
+    text-transform: uppercase;
+    pointer-events: none;
+    z-index: 5;
+    white-space: nowrap;
+  }
+
+  .field { margin-top: 16px; }
+  .field-label {
+    display: block;
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.2em;
+    color: var(--ink-faint); text-transform: uppercase; margin-bottom: 6px;
+  }
+  .field input[type=text],
+  .field input[type=number],
+  .field input[type=datetime-local],
+  .field textarea,
+  .field select {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--ink-soft);
+    color: var(--ink);
+    font-family: var(--mono); font-size: 13px;
+    padding: 6px 0;
+    outline: none;
+  }
+  .field input[type=text]:focus,
+  .field input[type=datetime-local]:focus,
+  .field textarea:focus,
+  .field select:focus { border-bottom-color: var(--accent); }
+  .field textarea { font-family: var(--serif); font-size: 14px; min-height: 60px; resize: vertical; }
+
+  .swatches { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  .sw {
+    width: 26px; height: 26px; border-radius: 50%;
+    cursor: pointer; border: 2px solid transparent;
+    transition: transform 0.15s;
+  }
+  .sw:hover { transform: scale(1.15); }
+  .sw.active { border-color: var(--ink); box-shadow: 0 0 0 1px var(--paper) inset; }
+
+  .cats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+  .cat {
+    background: transparent; border: 1px dashed var(--ink-dim);
+    color: var(--ink-soft); padding: 10px 12px;
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.16em;
+    cursor: pointer; text-align: left; text-transform: uppercase;
+  }
+  .cat:hover { border-color: var(--ink-soft); color: var(--ink); }
+  .cat.active { background: var(--ink); color: var(--paper); border-color: var(--ink); border-style: solid; }
+  .cat .blurb { display: block; font-size: 9.5px; letter-spacing: 0.12em; opacity: 0.7; margin-top: 4px; text-transform: none; font-style: italic; font-family: var(--serif); }
+
+  .duration-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .toolbar {
+    margin-top: 24px;
+    display: flex; justify-content: space-between; align-items: center;
+    border-top: 1px solid var(--ink-dim);
+    padding-top: 16px;
+  }
+  .err {
+    color: var(--accent); font-size: 11px; letter-spacing: 0.14em;
+    text-transform: uppercase; min-height: 14px;
+  }
+  .help {
+    font-size: 10.5px; letter-spacing: 0.14em; color: var(--ink-faint);
+    margin-top: 4px;
+  }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <a href="index.html" class="btn">[ ← BACK TO CABINET ]</a>
+    <span class="specnum">NEW SPECIMEN · UNCATALOGUED</span>
+  </div>
+
+  <div class="layout">
+
+    <div class="panel">
+      <span class="panel-title">┄ PREVIEW ┄</span>
+      <div class="preview" id="preview">
+        <div class="empty">+ click to upload an image</div>
+      </div>
+      <input type="file" id="imgInput" accept="image/*" style="display:none;" />
+      <div class="field">
+        <label class="field-label">specimen color</label>
+        <div class="swatches" id="swatches"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <span class="panel-title">┄ CATALOGUE ┄</span>
+
+      <div class="field">
+        <label class="field-label">title</label>
+        <input type="text" id="title" placeholder="a sweet potato, steaming" />
+      </div>
+
+      <div class="field">
+        <label class="field-label">notes (optional)</label>
+        <textarea id="description" placeholder="how this thing measures time…"></textarea>
+      </div>
+
+      <div class="field">
+        <label class="field-label">classification</label>
+        <div class="cats" id="cats"></div>
+      </div>
+
+      <div id="durationField" class="field">
+        <label class="field-label" id="durationLabel">duration</label>
+        <div class="duration-row">
+          <input type="number" id="durMin" placeholder="amount" min="0" step="any" />
+          <select id="durUnit">
+            <option value="60000">minutes</option>
+            <option value="3600000">hours</option>
+            <option value="86400000">days</option>
+            <option value="1000">seconds</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="dateField" class="field" style="display:none;">
+        <label class="field-label" id="dateLabel">moment captured</label>
+        <input type="datetime-local" id="dateInput" />
+      </div>
+
+      <div class="toolbar">
+        <span class="err" id="err"></span>
+        <button class="btn primary" id="saveBtn">[ ◆ ARCHIVE THIS ]</button>
+      </div>
+    </div>
+  </div>
+
+<script src="core.js"></script>
+<script>
+(function () {
+  const PALETTE = [
+    '#c5512a', '#d86aa0', '#e07a3a', '#3a78c2', '#4a78c2',
+    '#b03a3a', '#8a5a2a', '#c23e5a', '#4a5a9a', '#8a3a5a',
+    '#5a7a4a', '#5a5a5a', '#3a8a5a', '#8a5a3a', '#a83a2a',
+  ];
+
+  const CATEGORIES = [
+    { kind: 'countdown', type: 'photo_countdown',  label: 'COUNTDOWN', blurb: 'image emerges as time runs out' },
+    { kind: 'loop',      type: 'photo_loop',       label: 'LOOP',      blurb: 'image emerges, then begins again' },
+    { kind: 'anchor',    type: 'photo_fixed',      label: 'ANCHOR',    blurb: 'a moment, held in place' },
+    { kind: 'record',    type: 'photo_accumulate', label: 'RECORD',    blurb: 'dots gather, days accumulate' },
+  ];
+
+  let state = {
+    color: PALETTE[0],
+    type: CATEGORIES[0].type,
+    kind: CATEGORIES[0].kind,
+    image: null,
+    imgEl: null,
+  };
+
+  // === build swatches ===
+  const swatchEl = document.getElementById('swatches');
+  PALETTE.forEach(function (c, i) {
+    const s = document.createElement('div');
+    s.className = 'sw' + (i === 0 ? ' active' : '');
+    s.style.background = c;
+    s.dataset.color = c;
+    s.addEventListener('click', function () {
+      state.color = c;
+      document.querySelectorAll('.sw').forEach(function (x) { x.classList.remove('active'); });
+      s.classList.add('active');
+      renderPreview();
+    });
+    swatchEl.appendChild(s);
+  });
+
+  // === build category buttons ===
+  const catsEl = document.getElementById('cats');
+  CATEGORIES.forEach(function (cat, i) {
+    const b = document.createElement('button');
+    b.className = 'cat' + (i === 0 ? ' active' : '');
+    b.innerHTML = '[ ' + cat.label + ' ]<span class="blurb">' + cat.blurb + '</span>';
+    b.dataset.kind = cat.kind;
+    b.addEventListener('click', function () {
+      state.type = cat.type;
+      state.kind = cat.kind;
+      document.querySelectorAll('.cat').forEach(function (x) { x.classList.remove('active'); });
+      b.classList.add('active');
+      updateFieldsForKind(cat.kind);
+      renderPreview();   // ← 切换分类时重启预览动画
+    });
+    catsEl.appendChild(b);
+  });
+
+  function updateFieldsForKind(kind) {
+    const durField = document.getElementById('durationField');
+    const dateField = document.getElementById('dateField');
+    const durLabel = document.getElementById('durationLabel');
+    const dateLabel = document.getElementById('dateLabel');
+
+    if (kind === 'anchor' || kind === 'record') {
+      durField.style.display = 'none';
+      dateField.style.display = 'block';
+      dateLabel.textContent = (kind === 'anchor') ? 'moment captured' : 'began at';
+    } else {
+      durField.style.display = 'block';
+      dateField.style.display = 'none';
+      durLabel.textContent = (kind === 'loop') ? 'loops every' : 'duration';
+    }
+  }
+
+  // === 点击 preview 触发上传 ===
+  const previewEl = document.getElementById('preview');
+  const imgInput = document.getElementById('imgInput');
+  previewEl.addEventListener('click', function () {
+    imgInput.click();
+  });
+
+  imgInput.addEventListener('change', function (e) {
+    const f = e.target.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = function (ev) {
+      state.image = ev.target.result;
+      const img = new Image();
+      img.onload = function () {
+        state.imgEl = img;
+        renderPreview();
+      };
+      img.src = state.image;
+    };
+    reader.readAsDataURL(f);
+  });
+
+  // === 预览动画(关键改动)===
+  let previewAnimFrame = null;
+  const PREVIEW_CYCLE_MS = 5000; // 预览一轮 5 秒,跟实际 duration 无关
+
+  function renderPreview() {
+    // 先停掉之前的动画
+    if (previewAnimFrame) {
+      cancelAnimationFrame(previewAnimFrame);
+      previewAnimFrame = null;
+    }
+
+    const p = document.getElementById('preview');
+
+    if (!state.imgEl) {
+      p.innerHTML = '<div class="empty">+ click to upload an image</div>';
+      p.classList.remove('has-image');
+      return;
+    }
+
+    // 复用 canvas(避免每次切换分类闪一下)
+    let canvas = p.querySelector('canvas');
+    let modeLabel = p.querySelector('.preview-mode');
+    if (!canvas) {
+      p.innerHTML = '';
+      p.classList.add('has-image');
+      canvas = document.createElement('canvas');
+      canvas.style.width = '380px';
+      canvas.style.height = '380px';
+      p.appendChild(canvas);
+      modeLabel = document.createElement('div');
+      modeLabel.className = 'preview-mode';
+      p.appendChild(modeLabel);
+    }
+
+    // 顶部小标签:告诉用户在演示哪种效果
+    const labels = {
+      countdown: '◇ countdown · looping for preview',
+      loop:      '◇ loop · cycling',
+      anchor:    '◇ anchor · static',
+      record:    '◇ record · accelerated',
+    };
+    modeLabel.textContent = labels[state.kind] || '';
+
+    // 重置 clip-path
+    canvas.style.clipPath = 'none';
+
+    // 画初始 halftone(完整 cellSize)
+    TA.drawHalftonePhoto(canvas, state.imgEl, {
+      width: 380, height: 380, cellSize: 4, color: state.color
+    });
+
+    // anchor:静止的,不进入动画循环
+    if (state.kind === 'anchor') return;
+
+    // 启动循环动画
+    const startTime = Date.now();
+    function tick() {
+      const elapsed = Date.now() - startTime;
+      const progress = (elapsed % PREVIEW_CYCLE_MS) / PREVIEW_CYCLE_MS;
+
+      if (state.kind === 'countdown' || state.kind === 'loop') {
+        // 从顶向下显现
+        canvas.style.clipPath = 'inset(0 0 ' + ((1 - progress) * 100) + '% 0)';
+      } else if (state.kind === 'record') {
+        // 点点由稀变密
+        const cellSize = 12 - (12 - 4) * progress;
+        TA.drawHalftonePhoto(canvas, state.imgEl, {
+          width: 380, height: 380, cellSize: cellSize, color: state.color
+        });
+      }
+
+      previewAnimFrame = requestAnimationFrame(tick);
+    }
+    previewAnimFrame = requestAnimationFrame(tick);
+  }
+
+  // === Save ===
+  document.getElementById('saveBtn').addEventListener('click', function () {
+    const errEl = document.getElementById('err');
+    errEl.textContent = '';
+    const title = document.getElementById('title').value.trim();
+    if (!title) { errEl.textContent = 'a title is required'; return; }
+    if (!state.image) { errEl.textContent = 'an image is required'; return; }
+    const description = document.getElementById('description').value.trim();
+
+    let duration = null, startAt = Date.now();
+
+    if (state.kind === 'anchor' || state.kind === 'record') {
+      const d = document.getElementById('dateInput').value;
+      if (!d) { errEl.textContent = 'pick a moment'; return; }
+      startAt = new Date(d).getTime();
+    } else {
+      const v = parseFloat(document.getElementById('durMin').value);
+      const unit = parseFloat(document.getElementById('durUnit').value);
+      if (!v || v <= 0) { errEl.textContent = 'duration must be greater than 0'; return; }
+      duration = v * unit;
+    }
+
+    const all = JSON.parse(localStorage.getItem('TA_USER_SPECIMENS') || '[]');
+    const builtinCount = (window.TA_BUILTIN_SPECIMENS || []).length || 14;
+    const id = 'user-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+    const spec = {
+      id: id,
+      catalog: builtinCount + all.length + 1,
+      type: state.type,
+      kind: state.kind,
+      title: title,
+      description: description,
+      color: state.color,
+      image: state.image,
+      duration: duration,
+      startAt: startAt,
+      createdAt: Date.now(),
+    };
+    all.push(spec);
+    try {
+      localStorage.setItem('TA_USER_SPECIMENS', JSON.stringify(all));
+    } catch (e) {
+      errEl.textContent = 'storage full — image may be too large';
+      return;
+    }
+    location.href = 'custom.html?id=' + encodeURIComponent(id);
+  });
+
+  updateFieldsForKind(state.kind);
+})();
+</script>
+</body>
+</html>
