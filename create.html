@@ -97,7 +97,6 @@
   }
   .preview.has-image:hover::after { opacity: 1; }
 
-  /* 顶部模式提示标签 */
   .preview-mode {
     position: absolute;
     top: 12px; left: 50%;
@@ -229,7 +228,7 @@
 
       <div id="dateField" class="field" style="display:none;">
         <label class="field-label" id="dateLabel">moment captured</label>
-        <input type="datetime-local" id="dateInput" />
+        <input type="datetime-local" id="dateInput" lang="en-US" />
       </div>
 
       <div class="toolbar">
@@ -238,6 +237,10 @@
       </div>
     </div>
   </div>
+
+<!-- 关键:加载 Supabase SDK + 我们的配置 -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
 
 <script src="core.js"></script>
 <script>
@@ -259,8 +262,9 @@
     color: PALETTE[0],
     type: CATEGORIES[0].type,
     kind: CATEGORIES[0].kind,
-    image: null,
+    image: null,        // dataURL,只用于预览
     imgEl: null,
+    imageFile: null,    // 真实的 File 对象,save 时传给 Supabase Storage
   };
 
   // === build swatches ===
@@ -292,7 +296,7 @@
       document.querySelectorAll('.cat').forEach(function (x) { x.classList.remove('active'); });
       b.classList.add('active');
       updateFieldsForKind(cat.kind);
-      renderPreview();   // ← 切换分类时重启预览动画
+      renderPreview();
     });
     catsEl.appendChild(b);
   });
@@ -324,6 +328,7 @@
   imgInput.addEventListener('change', function (e) {
     const f = e.target.files[0];
     if (!f) return;
+    state.imageFile = f;     // ← 保留 File 对象用于上传
     const reader = new FileReader();
     reader.onload = function (ev) {
       state.image = ev.target.result;
@@ -337,12 +342,11 @@
     reader.readAsDataURL(f);
   });
 
-  // === 预览动画(关键改动)===
+  // === 预览动画 ===
   let previewAnimFrame = null;
-  const PREVIEW_CYCLE_MS = 5000; // 预览一轮 5 秒,跟实际 duration 无关
+  const PREVIEW_CYCLE_MS = 5000;
 
   function renderPreview() {
-    // 先停掉之前的动画
     if (previewAnimFrame) {
       cancelAnimationFrame(previewAnimFrame);
       previewAnimFrame = null;
@@ -356,7 +360,6 @@
       return;
     }
 
-    // 复用 canvas(避免每次切换分类闪一下)
     let canvas = p.querySelector('canvas');
     let modeLabel = p.querySelector('.preview-mode');
     if (!canvas) {
@@ -371,7 +374,6 @@
       p.appendChild(modeLabel);
     }
 
-    // 顶部小标签:告诉用户在演示哪种效果
     const labels = {
       countdown: '◇ countdown · looping for preview',
       loop:      '◇ loop · cycling',
@@ -380,28 +382,21 @@
     };
     modeLabel.textContent = labels[state.kind] || '';
 
-    // 重置 clip-path
     canvas.style.clipPath = 'none';
-
-    // 画初始 halftone(完整 cellSize)
     TA.drawHalftonePhoto(canvas, state.imgEl, {
       width: 380, height: 380, cellSize: 4, color: state.color
     });
 
-    // anchor:静止的,不进入动画循环
     if (state.kind === 'anchor') return;
 
-    // 启动循环动画
     const startTime = Date.now();
     function tick() {
       const elapsed = Date.now() - startTime;
       const progress = (elapsed % PREVIEW_CYCLE_MS) / PREVIEW_CYCLE_MS;
 
       if (state.kind === 'countdown' || state.kind === 'loop') {
-        // 从顶向下显现
         canvas.style.clipPath = 'inset(0 0 ' + ((1 - progress) * 100) + '% 0)';
       } else if (state.kind === 'record') {
-        // 点点由稀变密
         const cellSize = 12 - (12 - 4) * progress;
         TA.drawHalftonePhoto(canvas, state.imgEl, {
           width: 380, height: 380, cellSize: cellSize, color: state.color
@@ -413,13 +408,13 @@
     previewAnimFrame = requestAnimationFrame(tick);
   }
 
-  // === Save ===
-  document.getElementById('saveBtn').addEventListener('click', function () {
+  // === Save (改成 async,通过 Supabase 保存)===
+  document.getElementById('saveBtn').addEventListener('click', async function () {
     const errEl = document.getElementById('err');
     errEl.textContent = '';
     const title = document.getElementById('title').value.trim();
     if (!title) { errEl.textContent = 'a title is required'; return; }
-    if (!state.image) { errEl.textContent = 'an image is required'; return; }
+    if (!state.imageFile) { errEl.textContent = 'an image is required'; return; }
     const description = document.getElementById('description').value.trim();
 
     let duration = null, startAt = Date.now();
@@ -435,30 +430,44 @@
       duration = v * unit;
     }
 
-    const all = JSON.parse(localStorage.getItem('TA_USER_SPECIMENS') || '[]');
-    const builtinCount = (window.TA_BUILTIN_SPECIMENS || []).length || 14;
-    const id = 'user-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
-    const spec = {
-      id: id,
-      catalog: builtinCount + all.length + 1,
-      type: state.type,
-      kind: state.kind,
-      title: title,
-      description: description,
-      color: state.color,
-      image: state.image,
-      duration: duration,
-      startAt: startAt,
-      createdAt: Date.now(),
-    };
-    all.push(spec);
+    // 锁定按钮,显示 uploading 状态
+    const saveBtn = document.getElementById('saveBtn');
+    saveBtn.disabled = true;
+    saveBtn.textContent = '[ ◇ uploading... ]';
+
     try {
-      localStorage.setItem('TA_USER_SPECIMENS', JSON.stringify(all));
-    } catch (e) {
-      errEl.textContent = 'storage full — image may be too large';
-      return;
+      const id = 'user-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+
+      // 1. 上传图片到 Storage
+      const imageUrl = await TA_DB.uploadImage(state.imageFile, id);
+
+      // 2. 拉一下当前所有 specimens 算 catalog 编号
+      const existing = await TA_DB.getAllSpecimens();
+      const builtinCount = (window.TA_BUILTIN_SPECIMENS || []).length || 0;
+
+      // 3. 写入数据库
+      const spec = {
+        id: id,
+        catalog: builtinCount + existing.length + 1,
+        type: state.type,
+        kind: state.kind,
+        title: title,
+        description: description,
+        color: state.color,
+        image: imageUrl,
+        duration: duration,
+        startAt: startAt,
+      };
+      await TA_DB.saveSpecimen(spec);
+
+      // 4. 跳转到详情页
+      location.href = 'custom.html?id=' + encodeURIComponent(id);
+    } catch (err) {
+      console.error(err);
+      errEl.textContent = 'save failed — ' + (err.message || 'check console');
+      saveBtn.disabled = false;
+      saveBtn.textContent = '[ ◆ ARCHIVE THIS ]';
     }
-    location.href = 'custom.html?id=' + encodeURIComponent(id);
   });
 
   updateFieldsForKind(state.kind);

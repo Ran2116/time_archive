@@ -61,7 +61,6 @@
     min-height: 460px;
     flex-direction: column;
   }
-  /* halftone 照片框 */
   .print-frame {
     position: relative;
     width: 100%;
@@ -75,7 +74,6 @@
     width: 100%;
     height: auto;
   }
-  /* RECORD 类型的 day tally */
   .record-caption {
     margin-top: 18px;
     text-align: center;
@@ -99,7 +97,6 @@
     text-transform: uppercase;
     margin-top: 8px;
   }
-  /* ANCHOR 类型的小字签 */
   .anchor-caption {
     margin-top: 14px;
     font-family: var(--mono);
@@ -151,9 +148,10 @@
     font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.18em;
     color: var(--ink-faint); text-transform: uppercase;
   }
-  .missing {
+  .missing, .loading {
     text-align: center; padding: 80px 20px;
     color: var(--ink-faint); font-size: 13px;
+    letter-spacing: 0.18em; text-transform: uppercase;
   }
 </style>
 </head>
@@ -163,22 +161,27 @@
     <span class="specnum" id="specnumLabel">USER SPECIMEN</span>
   </div>
 
-  <div id="content"></div>
+  <div id="content">
+    <div class="loading">◇ loading specimen...</div>
+  </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
 <script src="core.js"></script>
 <script>
-(function () {
+(async function () {
   const id = new URLSearchParams(location.search).get('id');
-  const all = JSON.parse(localStorage.getItem('TA_USER_SPECIMENS') || '[]');
-  const SPEC = all.find(function (s) { return s.id === id; });
+
+  // 从 Supabase 拉
+  const SPEC = await TA_DB.getSpecimen(id);
 
   if (!SPEC) {
     document.getElementById('content').innerHTML =
-      '<div class="missing">SPECIMEN NOT FOUND IN ARCHIVE.<br/>this catalogue lives in your browser only.</div>';
+      '<div class="missing">SPECIMEN NOT FOUND IN ARCHIVE.</div>';
     return;
   }
 
-  // === 关键:统一 kind 命名(优先用 SPEC.kind,然后映射老名字到新名字)===
+  // === 统一 kind 命名 ===
   let kind = SPEC.kind || TA.kindOf(SPEC.type);
   if (kind === 'fixed') kind = 'anchor';
   if (kind === 'accumulate') kind = 'record';
@@ -194,7 +197,6 @@
     });
   }
 
-  // build layout
   const root = document.getElementById('content');
   root.innerHTML = `
     <div class="layout">
@@ -227,13 +229,13 @@
     </div>
   `;
 
+  // 个人观看状态(暂停/scrub)留在本地 localStorage 里 —— 不影响其他访问者
   const KEY = 'TA_STATE_' + SPEC.id;
   let saved = (function () {
     try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; }
   })() || { startAt: SPEC.startAt || Date.now(), paused: false, pausedElapsed: 0 };
   function saveState() { localStorage.setItem(KEY, JSON.stringify(saved)); }
 
-  // === 控制按钮 ===
   const controlsEl = document.getElementById('controls');
   function makeBtn(label, onClick) {
     const b = document.createElement('button');
@@ -264,26 +266,22 @@
       pauseBtn.textContent = '[ ▮▮ PAUSE ]';
       render();
     });
-    if (kind === 'record') {
-      makeBtn('[ ⌖ START NOW ]', function () {
-        if (!confirm('Restart the tally from this moment?')) return;
-        saved.startAt = Date.now();
-        saved.paused = false; saved.pausedElapsed = 0;
-        saveState();
-        render();
-      });
-    }
   }
 
-  document.getElementById('delBtn').addEventListener('click', function () {
-    if (!confirm('Remove this specimen from the archive?')) return;
-    const others = all.filter(function (s) { return s.id !== SPEC.id; });
-    localStorage.setItem('TA_USER_SPECIMENS', JSON.stringify(others));
-    localStorage.removeItem(KEY);
-    location.href = 'index.html';
+  // 删除按钮:从 Supabase 删
+  document.getElementById('delBtn').addEventListener('click', async function () {
+    if (!confirm('Remove this specimen from the archive?\n\nThis affects ALL visitors — the specimen will be gone for everyone.')) return;
+    try {
+      await TA_DB.deleteSpecimen(SPEC.id);
+      localStorage.removeItem(KEY);
+      location.href = 'index.html';
+    } catch (err) {
+      console.error(err);
+      alert('Delete failed — ' + (err.message || 'check console'));
+    }
   });
 
-  // === Scrubber ===
+  // Scrubber
   let scrubVal = null;
   if (canScrub) {
     const sb = document.getElementById('scrubber');
@@ -313,7 +311,7 @@
     return Math.max(0, Date.now() - saved.startAt);
   }
 
-  // === 准备视觉区(halftone canvas + 类型相关副标题)===
+  // 视觉区
   const clockArea = document.getElementById('clockArea');
   const printFrame = document.createElement('div');
   printFrame.className = 'print-frame';
@@ -321,7 +319,6 @@
   printFrame.appendChild(photoCanvas);
   clockArea.appendChild(printFrame);
 
-  // RECORD 加 day tally;ANCHOR 加日期签
   let dayCountEl = null;
   if (kind === 'record') {
     const cap = document.createElement('div');
@@ -341,44 +338,38 @@
   }
 
   const img = new Image();
+  img.crossOrigin = 'anonymous';   // ← Supabase Storage 需要这个,canvas 才能跨域读图
   let imgReady = false;
   img.onload = function () { imgReady = true; render(); };
+  img.onerror = function (e) { console.error('image load failed', e); };
   img.src = SPEC.image;
 
-  // === 渲染:四种 kind 各自的视觉机制 ===
   const SZ = 420;
 
   function render() {
     if (!imgReady) return;
     const elapsed = getElapsed();
 
-    // 重置 clip-path(每次重画前)
     photoCanvas.style.clipPath = 'none';
-
     let cellSize = 4;
 
     if (kind === 'countdown') {
-      // 图从顶向下显现(像 egg)
       const progress = Math.min(1, Math.max(0, elapsed / SPEC.duration));
       photoCanvas.style.clipPath = 'inset(0 0 ' + ((1 - progress) * 100) + '% 0)';
     } else if (kind === 'loop') {
-      // 同上,但每个 period 重置一次
       const period = SPEC.duration || 60000;
       const cyclePos = (elapsed % period) / period;
       photoCanvas.style.clipPath = 'inset(0 0 ' + ((1 - cyclePos) * 100) + '% 0)';
     } else if (kind === 'record') {
-      // 点点逐渐变密(2 年走完)
       const TS = 2 * 365 * 86400000;
       const progress = Math.min(1, Math.max(0, elapsed / TS));
       cellSize = 16 - (16 - 3) * progress;
     }
-    // anchor:静止,cellSize=4
 
     TA.drawHalftonePhoto(photoCanvas, img, {
       width: SZ, height: SZ, cellSize: cellSize, color: SPEC.color
     });
 
-    // 更新 day tally(record 类型)
     if (dayCountEl) {
       const t = TA.fmtDHMS(elapsed);
       dayCountEl.textContent = t.d;
