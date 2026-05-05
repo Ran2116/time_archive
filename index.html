@@ -194,7 +194,6 @@
   }
   .fab:hover { background: var(--ink); color: var(--paper); }
 
-  /* Loading state */
   .loading-banner {
     text-align: center; padding: 60px 20px;
     color: var(--ink-faint); font-size: 11px;
@@ -235,7 +234,6 @@
 
   <a href="create.html" class="fab">[ + NEW SPECIMEN ]</a>
 
-<!-- Supabase 必须在 specimens.js 之前加载 -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
 <script src="core.js"></script>
@@ -258,7 +256,6 @@
   }, 600);
 
   // === 加载所有 specimens ===
-  // built-in 来自 specimens.js,user-created 来自 Supabase
   async function loadUserSpecs() {
     return await TA_DB.getAllSpecimens();
   }
@@ -286,12 +283,10 @@
   function makeCell(spec) {
     const a = document.createElement('a');
     let kind = spec.kind || TA.kindOf(spec.type);
-    // 老名字 → 新名字
     if (kind === 'fixed') kind = 'anchor';
     if (kind === 'accumulate') kind = 'record';
 
     a.className = 'cell ' + pickSize(spec);
-    // user-created 标本去 custom.html;built-in 去自己的 file
     a.href = spec.file || ('custom.html?id=' + encodeURIComponent(spec.id));
     a.dataset.kind = kind;
 
@@ -326,7 +321,7 @@
   // === 渲染分发 ===
   function renderInto(area, spec, w, h) {
     area.innerHTML = '';
-    
+    // 优先:有 image 字段就走 halftone
     if (spec.image) return renderPhoto(area, spec, w, h);
     if (spec.type === 'accumulate') return renderAccumulate(area, spec);
     if (spec.type === 'fixed' || spec.kind === 'anchor') return renderAnchor(area, spec);
@@ -397,63 +392,23 @@
     wrap.appendChild(plaque);
   }
 
-   function renderPhoto(area, spec, w, h) {
+  // === Cabinet 上的 photo specimen:直接画完整 halftone ===
+  // 不做时间相关动画 —— 时间动画只在详情页(custom.html / 各 specimen 页)展示
+  function renderPhoto(area, spec, w, h) {
     if (!spec.image) return;
     const sz = Math.min(w, h) - 10;
     const canvas = document.createElement('canvas');
     area.appendChild(canvas);
+    canvas.style.width = sz + 'px';
+    canvas.style.height = sz + 'px';
+
     const img = new Image();
-    const k = spec.kind || TA.kindOf(spec.type);
+    img.crossOrigin = 'anonymous';   // ← Supabase Storage 跨域要这个
+
     img.onload = function () {
-      function frame() {
-        const elapsed = Date.now() - spec.startAt;
-        let opacity = 1;
-        let cellSize = 4;  // 默认值
-        if (k === 'countdown') {
-          opacity = Math.max(0.05, 1 - elapsed / spec.duration);
-        } else if (k === 'record') {
-          // record:cellSize 随时间变小,点点越来越多(跟 specimen 页面一致)
-          const TS = 2 * 365 * 86400000; // 2 年(可改)
-          const progress = Math.min(1, Math.max(0, elapsed / TS));
-          cellSize = 14 - (14 - 4) * progress; // 14 → 4
-        } else if (k === 'loop') {
-          const period = spec.duration || 60000;
-          const t = (elapsed % period) / period;
-          opacity = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(t * Math.PI * 2));
-        }
-        canvas.style.opacity = opacity;
-        TA.drawHalftonePhoto(canvas, img, { width: sz, height: sz, cellSize: cellSize, color: spec.color });
-        canvas.style.width = sz + 'px';
-        canvas.style.height = sz + 'px';
-      }
-      frame();
-      if (k !== 'anchor') setInterval(frame, 1000);
-    };
-    img.src = spec.image;
-}
-      function tick() {
-        const elapsed = Date.now() - spec.startAt;
-
-        if (k === 'countdown') {
-          const progress = Math.min(1, Math.max(0, elapsed / spec.duration));
-          canvas.style.clipPath = 'inset(0 0 ' + ((1 - progress) * 100) + '% 0)';
-        } else if (k === 'loop') {
-          const period = spec.duration || 60000;
-          const cyclePos = (elapsed % period) / period;
-          canvas.style.clipPath = 'inset(0 0 ' + ((1 - cyclePos) * 100) + '% 0)';
-        } else if (k === 'record') {
-          const TS = 2 * 365 * 86400000;
-          const progress = Math.min(1, Math.max(0, elapsed / TS));
-          const cellSize = 12 - (12 - 4) * progress;
-          TA.drawHalftonePhoto(canvas, img, {
-            width: sz, height: sz, cellSize: cellSize, color: spec.color
-          });
-        }
-        // anchor:啥都不做,保持完整 halftone
-      }
-
-      tick();
-      if (k !== 'anchor') setInterval(tick, 1000);
+      TA.drawHalftonePhoto(canvas, img, {
+        width: sz, height: sz, cellSize: 4, color: spec.color
+      });
     };
 
     img.onerror = function () {
@@ -465,7 +420,7 @@
 
   // === 构建陈列柜 ===
   const grid = document.getElementById('grid');
-  grid.innerHTML = '';   // 清掉 loading banner
+  grid.innerHTML = '';
   all.forEach(function (spec) {
     grid.appendChild(makeCell(spec));
   });
