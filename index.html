@@ -326,7 +326,7 @@
   // === 渲染分发 ===
   function renderInto(area, spec, w, h) {
     area.innerHTML = '';
-    // 优先:有 image 字段就走 halftone
+    
     if (spec.image) return renderPhoto(area, spec, w, h);
     if (spec.type === 'accumulate') return renderAccumulate(area, spec);
     if (spec.type === 'fixed' || spec.kind === 'anchor') return renderAnchor(area, spec);
@@ -406,17 +406,20 @@
     canvas.style.height = sz + 'px';
 
     const img = new Image();
-    img.crossOrigin = 'anonymous';   // ← Supabase Storage 跨域要这个
-
-    let k = spec.kind || TA.kindOf(spec.type);
-    if (k === 'fixed') k = 'anchor';
-    if (k === 'accumulate') k = 'record';
+    img.crossOrigin = 'anonymous';
 
     img.onload = function () {
-      // 一次性画好完整 halftone(countdown/loop/anchor 用 clip-path 控制显示)
       TA.drawHalftonePhoto(canvas, img, {
         width: sz, height: sz, cellSize: 4, color: spec.color
       });
+    };
+
+    img.onerror = function () {
+      console.error('Failed to load image:', spec.image);
+    };
+
+    img.src = spec.image;
+}
 
       function tick() {
         const elapsed = Date.now() - spec.startAt;
