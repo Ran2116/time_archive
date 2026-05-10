@@ -172,7 +172,7 @@
 (async function () {
   const id = new URLSearchParams(location.search).get('id');
 
-  // 从 Supabase 拉
+
   const SPEC = await TA_DB.getSpecimen(id);
 
   if (!SPEC) {
@@ -181,7 +181,7 @@
     return;
   }
 
-  // === 统一 kind 命名 ===
+
   let kind = SPEC.kind || TA.kindOf(SPEC.type);
   if (kind === 'fixed') kind = 'anchor';
   if (kind === 'accumulate') kind = 'record';
@@ -229,7 +229,7 @@
     </div>
   `;
 
-  // 个人观看状态(暂停/scrub)留在本地 localStorage 里 —— 不影响其他访问者
+ 
   const KEY = 'TA_STATE_' + SPEC.id;
   let saved = (function () {
     try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; }
@@ -268,7 +268,7 @@
     });
   }
 
-  // 删除按钮:从 Supabase 删
+
   document.getElementById('delBtn').addEventListener('click', async function () {
     if (!confirm('Remove this specimen from the archive?\n\nThis affects ALL visitors — the specimen will be gone for everyone.')) return;
     try {
@@ -281,7 +281,7 @@
     }
   });
 
-  // Scrubber
+
   let scrubVal = null;
   if (canScrub) {
     const sb = document.getElementById('scrubber');
@@ -311,7 +311,7 @@
     return Math.max(0, Date.now() - saved.startAt);
   }
 
-  // 视觉区
+ 
   const clockArea = document.getElementById('clockArea');
   const printFrame = document.createElement('div');
   printFrame.className = 'print-frame';
@@ -338,7 +338,7 @@
   }
 
   const img = new Image();
-  img.crossOrigin = 'anonymous';   // ← Supabase Storage 需要这个,canvas 才能跨域读图
+  img.crossOrigin = 'anonymous';   
   let imgReady = false;
   img.onload = function () { imgReady = true; render(); };
   img.onerror = function (e) { console.error('image load failed', e); };
