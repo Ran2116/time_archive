@@ -136,9 +136,9 @@
 (function () {
   const SPEC = {"id":"subway-loop","file":"subway-loop.html","catalog":2,"type":"digital_loop","kind":"loop","title":"The next train, again","color":"#3a8a5a","duration":360000,"description":"The train will come, but usually not on time",};
 
-  // 倒计时到这个值时重置(60000 ms = 1 分钟)
+  
   const RESET_AT_MS = 60000;
-  // 实际循环周期 = 总时长 - 重置点(从 6:00 数到 1:00,共 5 分钟)
+ 
   const CYCLE_DUR = SPEC.duration - RESET_AT_MS;
 
   if (!SPEC.startAt) SPEC.startAt = Date.now();
@@ -164,14 +164,14 @@
   if (!isAnchor) {
     pauseBtn = makeBtn(saved.paused ? '[ ▶ RESUME ]' : '[ ▮▮ PAUSE ]', function () {
       if (saved.paused) {
-        // RESUME:从当前 pausedElapsed 位置继续走
+     
         saved.startAt = Date.now() - saved.pausedElapsed;
         saved.paused = false;
       } else {
-        // PAUSE:在当前显示位置停下(如果正在拖动就用拖动值,否则用 live 值)
+       
         saved.pausedElapsed = (scrubVal != null) ? scrubVal : (Date.now() - saved.startAt);
         saved.paused = true;
-        scrubVal = null; // 退出 preview 模式,改成用 pausedElapsed
+        scrubVal = null; 
       }
       save();
       pauseBtn.textContent = saved.paused ? '[ ▶ RESUME ]' : '[ ▮▮ PAUSE ]';
@@ -197,7 +197,7 @@
     const sb = document.getElementById('scrubber');
     sb.style.display = 'block';
     const input = document.getElementById('scrubInput');
-    // 让 scrubber 的范围对应一个完整的循环周期
+    
     const max = SPEC.kind === 'record'
       ? Math.max((Date.now() - saved.startAt) * 2, 5 * 365 * 86400000)
       : (SPEC.type === 'digital_loop' ? CYCLE_DUR : (SPEC.duration || 60000));
@@ -207,18 +207,18 @@
     input.addEventListener('input', function () {
       const v = Number(input.value);
       if (saved.paused) {
-        // 暂停状态下:拖动直接更新暂停位置
+        
         saved.pausedElapsed = v;
       } else {
-        // 播放状态下:拖动是 preview,松手回 live
+        
         scrubVal = v;
       }
       render();
     });
-    // 松手处理:暂停时只保存进度,播放时回到 live 模式
+    
     function onScrubRelease() {
       if (saved.paused) {
-        save(); // 暂停拖动后,松手时把新位置存进 localStorage
+        save(); 
         render();
         return;
       }
@@ -243,12 +243,12 @@
     else renderCanvas(elapsed);
     renderPlaque(elapsed);
 
-    // 同步滑块位置 + 状态标签
+    
     if (!isAnchor) {
       const input = document.getElementById('scrubInput');
       const label = document.getElementById('scrubLabel');
       if (input && scrubVal == null) {
-        // 不在拖动时,让滑块自动跟着当前位置走
+        
         let livePos;
         if (SPEC.type === 'digital_loop') {
           livePos = elapsed % CYCLE_DUR;
@@ -281,7 +281,7 @@
     if (SPEC.type === 'sweet_potato') {
       params.progress = Math.min(1, elapsed / SPEC.duration);
     } else if (SPEC.type === 'digital_loop') {
-      // 在 1 分钟剩余时重置:用 5 分钟周期循环,但显示从 6:00 开始倒数到 1:00
+     
       const pos = elapsed % CYCLE_DUR;
       params.remainMs = SPEC.duration - pos;
     }
