@@ -71,7 +71,7 @@
   }
   .clock-area canvas { display: block; }
 
-  /* === 打印式图片容器 === */
+
   .print-frame {
     position: relative;
     width: 100%;
@@ -84,11 +84,11 @@
     display: block;
     width: 100%;
     height: auto;
-    /* 关键改动:从顶部裁切,这样图像从底部开始往上显现 */
+   
     clip-path: inset(var(--clip) 0 0 0);
     transition: clip-path 0.4s linear;
   }
-  /* 关掉拖拽时的过渡,这样滑块响应更跟手 */
+
   .print-frame.scrubbing .halftone-canvas { transition: none; }
 
   .print-frame.idle::before {
@@ -107,7 +107,7 @@
 
   .controls { margin-top: 22px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
 
-  /* === 进度条 === */
+ 
   .scrubber { margin-top: 22px; padding: 0 24px; }
   .scrubber-row {
     display: flex; justify-content: space-between;
@@ -140,7 +140,7 @@
     transition: none;
   }
 
-  /* === Plaque === */
+ 
   .plaque { padding: 24px 22px; }
   .plaque-kind {
     font-family: var(--mono); font-size: 10px; letter-spacing: 0.22em;
@@ -207,9 +207,7 @@
 <script src="core.js"></script>
 <script>
 (function () {
-  // ============================================================
-  //  3D Print specimen — 从底部向上循环显现
-  // ============================================================
+  
   const SPEC = {
     id: "3d-print",
     file: "print.html",
@@ -218,16 +216,15 @@
     kind: "loop",
     title: "3D Print",
     color: "#3a6a8a",
-    duration: (4 * 60 + 43) * 60 * 1000,    // 总时长 4 小时 43 分钟
-    image: "print.jpg",                     // ← 改成你的静态图片(.jpg/.png)
+    duration: (4 * 60 + 43) * 60 * 1000,    
+    image: "print.jpg",                    
     description: "Start the print. The nozzle traces one flat outline, then another, then another. After 4 hours and 43 minutes of patient stacking, the layers have become an object."
   }
 
-  // 视觉循环周期:每 X 毫秒完成一次"从底向上"的显现
-  // 2 小时 52 分钟一次 → 4h 43min 内大约循环 1.6 次
+
   const CYCLE_MS = (2 * 60 + 52) * 60 * 1000;
 
-  // 固定编目日期(可改)
+
   const CATALOGUED_DATE = new Date();
 
   function makePlaceholderImage() {
@@ -245,7 +242,7 @@
     return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
   }
 
-  // === 状态 ===
+  
   const KEY = 'TA_STATE_' + SPEC.id;
   function loadState() {
     try { return JSON.parse(localStorage.getItem(KEY) || 'null'); }
@@ -273,7 +270,7 @@
   function isRunning() { return saved.startAt != null && !saved.paused && getElapsed() < SPEC.duration; }
   function isDone()    { return saved.startAt != null && getElapsed() >= SPEC.duration; }
 
-  // === 控制按钮 ===
+ 
   const controlsEl = document.getElementById('controls');
   let mainBtn, resetBtn;
 
@@ -322,7 +319,7 @@
     render();
   }
 
-  // === 进度条 ===
+
   const track = document.getElementById('progressTrack');
   const fill = document.getElementById('progressFill');
   const thumb = document.getElementById('progressThumb');
@@ -359,7 +356,7 @@
     render();
   });
 
-  // === 准备 halftone canvas ===
+ 
   const clockArea = document.getElementById('clockArea');
   const printFrame = document.createElement('div');
   printFrame.className = 'print-frame idle';
@@ -393,15 +390,15 @@
   };
   img.src = SPEC.image;
 
-  // === 渲染 ===
+  
   function render() {
     const elapsed = getElapsed();
     const totalProgress = Math.min(1, elapsed / SPEC.duration);
 
-    // 视觉循环:每 CYCLE_MS 完成一次 0→1 的显现
+    
     let cycleProgress;
     if (isDone()) {
-      // 跑完后图保持完全显示
+     
       cycleProgress = 1;
     } else if (isIdle()) {
       cycleProgress = 0;
@@ -410,16 +407,14 @@
     }
 
     if (halftoneReady) {
-      // 从底部向上显现:从顶部裁切,裁切量随 cycleProgress 减小
-      // cycleProgress = 0 → 100% 被裁掉(全部隐藏)
-      // cycleProgress = 1 → 0% 被裁掉(完全显示)
+      
       const clipPercent = (1 - cycleProgress) * 100;
       halftoneCanvas.style.setProperty('--clip', clipPercent + '%');
 
       printFrame.classList.toggle('idle', isIdle());
     }
 
-    // 进度条:跟踪线性总进度(不循环)
+
     fill.style.width = (totalProgress * 100) + '%';
     thumb.style.left = (totalProgress * 100) + '%';
 
@@ -472,11 +467,10 @@
     document.getElementById('catTag').textContent = '◆ CATALOGUED · ' + CATALOGUED_DATE.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   }
 
-  // === 启动 ===
+ 
   rebuildButtons();
   render();
-  // 因为现在是循环显现(5 分钟一圈),tick 频率不需要太高
-  // 1秒一次足够让 clip-path 平滑过渡(transition 0.4s 接管)
+  
   setInterval(function () {
     if (isRunning() || scrubVal != null) {
       render();
