@@ -67,7 +67,7 @@
     color: var(--ink-soft); text-transform: uppercase;
   }
 
-  /* === 标本展示区域 === */
+
   .clock-area {
     display: flex; align-items: center; justify-content: center;
     min-height: 460px;
@@ -75,7 +75,7 @@
   }
   .clock-area canvas { display: block; }
 
-  /* === 打印式图片容器 === */
+
   .print-frame {
     position: relative;
     width: 100%;
@@ -90,7 +90,7 @@
     height: auto;
   }
 
-  /* "等待启动"占位状态 */
+
   .print-frame.idle::before {
     content: '○ awaiting initiation';
     position: absolute;
@@ -105,7 +105,7 @@
     z-index: 2;
   }
 
-  /* 文字时钟(给非图片类型保留)*/
+  
   .clock-area .text-clock {
     text-align: center; font-family: var(--serif); width: 100%;
   }
@@ -118,7 +118,7 @@
     justify-content: center; flex-wrap: wrap;
   }
 
-  /* === 进度条 === */
+
   .scrubber { margin-top: 22px; padding: 0 24px; }
   .scrubber-row {
     display: flex; justify-content: space-between;
@@ -151,7 +151,7 @@
     transition: none;
   }
 
-  /* === Plaque === */
+
   .plaque {
     padding: 24px 22px;
   }
@@ -232,10 +232,6 @@
 <script src="core.js"></script>
 <script>
 (function () {
-  // ============================================================
-  //  通用 countdown specimen 渲染逻辑
-  //  这一版:image 改成 GIF,持续循环播放 halftone
-  // ============================================================
   const SPEC = {
     id: "boil-an-egg",
     file: "egg.html",
@@ -249,11 +245,10 @@
     description: "Take an egg out of the fridge and put it into a pot with water. After around 8 min and 12 seconds, a soft boiled egg comes into birth."
   }
 
-  // halftone 重绘频率(ms 间隔):50 = 20fps,30 = ~33fps
-  // 太低会卡 CPU;太高动画看起来不顺。20fps 对一般 GIF 足够
+ 
   const HALFTONE_FPS_INTERVAL = 50;
 
-  // 占位图(GIF 加载失败时显示)
+  
   function makePlaceholderImage() {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
       <defs>
@@ -271,7 +266,7 @@
     return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
   }
 
-  // === 状态:默认未启动 ===
+  
   const KEY = 'TA_STATE_' + SPEC.id;
   function loadState() {
     try { return JSON.parse(localStorage.getItem(KEY) || 'null'); }
@@ -299,7 +294,7 @@
   function isRunning() { return saved.startAt != null && !saved.paused && getElapsed() < SPEC.duration; }
   function isDone()    { return saved.startAt != null && getElapsed() >= SPEC.duration; }
 
-  // === 控制按钮 ===
+  
   const controlsEl = document.getElementById('controls');
   let mainBtn, resetBtn;
 
@@ -348,7 +343,7 @@
     render();
   }
 
-  // === 进度条交互 ===
+  
   const track = document.getElementById('progressTrack');
   const fill = document.getElementById('progressFill');
   const thumb = document.getElementById('progressThumb');
@@ -383,9 +378,7 @@
     render();
   });
 
-  // ============================================================
-  //  GIF + halftone 循环渲染
-  // ============================================================
+  
   const clockArea = document.getElementById('clockArea');
   const printFrame = document.createElement('div');
   printFrame.className = 'print-frame idle';
@@ -399,7 +392,7 @@
   halftoneCanvas.height = H;
 
   const img = new Image();
-  // 让 GIF 在 DOM 里(某些浏览器需要这样才能正常自动播放)
+  
   img.style.display = 'none';
   document.body.appendChild(img);
 
@@ -411,7 +404,7 @@
         width: W, height: H, cellSize: 4, color: SPEC.color
       });
     } else {
-      // 降级:直接画当前帧
+      
       const ctx = halftoneCanvas.getContext('2d');
       ctx.fillStyle = '#efdfd0';
       ctx.fillRect(0, 0, W, H);
@@ -420,8 +413,8 @@
   }
 
   img.onload = function () {
-    drawCurrentFrame(); // 立刻画一次
-    // 定时重绘 → 跟着 GIF 自动播放的当前帧走
+    drawCurrentFrame(); 
+    
     halftoneTimer = setInterval(drawCurrentFrame, HALFTONE_FPS_INTERVAL);
     render();
   };
@@ -431,19 +424,19 @@
   };
   img.src = SPEC.image;
 
-  // === 渲染(状态 + 进度条 + plaque,不再控制 clip-path)===
+  
   function render() {
     const elapsed = getElapsed();
     const progress = Math.min(1, elapsed / SPEC.duration);
 
-    // 状态 class(只控制 idle 提示文字)
+   
     printFrame.classList.toggle('idle', isIdle());
 
-    // 进度条
+   
     fill.style.width = (progress * 100) + '%';
     thumb.style.left = (progress * 100) + '%';
 
-    // 标签
+  
     const elapsedStr = fmtMS(elapsed);
     const totalStr = fmtMS(SPEC.duration);
     document.getElementById('elapsedLabel').textContent = elapsedStr + ' / ' + totalStr;
@@ -492,7 +485,7 @@
     document.getElementById('catTag').textContent = '◆ CATALOGUED · ' + new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   }
 
-  // === 启动 ===
+  
   rebuildButtons();
   render();
   setInterval(function () {
