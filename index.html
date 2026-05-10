@@ -240,7 +240,7 @@
 <script src="specimens.js"></script>
 <script>
 (async function () {
-  // === 系统时钟 ===
+
   function updateSysClock() {
     const now = new Date();
     const t = now.toLocaleTimeString('en-US', { hour12: false });
@@ -255,7 +255,7 @@
     document.getElementById('tickStatus').style.opacity = blink ? '1' : '0.35';
   }, 600);
 
-  // === 加载所有 specimens ===
+
   async function loadUserSpecs() {
     return await TA_DB.getAllSpecimens();
   }
@@ -318,10 +318,10 @@
     return a;
   }
 
-  // === 渲染分发 ===
+
   function renderInto(area, spec, w, h) {
     area.innerHTML = '';
-    // 优先:有 image 字段就走 halftone
+    
     if (spec.image) return renderPhoto(area, spec, w, h);
     if (spec.type === 'accumulate') return renderAccumulate(area, spec);
     if (spec.type === 'fixed' || spec.kind === 'anchor') return renderAnchor(area, spec);
@@ -392,8 +392,7 @@
     wrap.appendChild(plaque);
   }
 
-  // === Cabinet 上的 photo specimen:直接画完整 halftone ===
-  // 不做时间相关动画 —— 时间动画只在详情页(custom.html / 各 specimen 页)展示
+  
   function renderPhoto(area, spec, w, h) {
     if (!spec.image) return;
     const sz = Math.min(w, h) - 10;
@@ -403,7 +402,7 @@
     canvas.style.height = sz + 'px';
 
     const img = new Image();
-    img.crossOrigin = 'anonymous';   // ← Supabase Storage 跨域要这个
+    img.crossOrigin = 'anonymous';  
 
     img.onload = function () {
       TA.drawHalftonePhoto(canvas, img, {
@@ -418,14 +417,14 @@
     img.src = spec.image;
   }
 
-  // === 构建陈列柜 ===
+
   const grid = document.getElementById('grid');
   grid.innerHTML = '';
   all.forEach(function (spec) {
     grid.appendChild(makeCell(spec));
   });
 
-  // === Filter ===
+
   const buttons = document.querySelectorAll('.menu button');
   buttons.forEach(function (b) {
     b.addEventListener('click', function () {
