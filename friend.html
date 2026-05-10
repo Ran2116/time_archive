@@ -62,7 +62,7 @@
   }
   .clock-area canvas { display: block; }
 
-  /* === halftone photo 容器 === */
+
   .print-frame {
     position: relative;
     width: 100%;
@@ -77,7 +77,7 @@
     height: auto;
   }
 
-  /* 照片底下的"档案签"小字 */
+
   .anchor-caption {
     margin-top: 14px;
     font-family: var(--mono);
@@ -149,8 +149,7 @@
 <script src="core.js"></script>
 <script>
 (function () {
-  // === 锚定时刻:2026 年 4 月 18 日 下午 3:47(本地时间)===
-  // new Date(年, 月-1, 日, 小时, 分, 秒)—— 月份从 0 开始,所以 4 月 = 3
+  
   const ANCHOR_AT = new Date(2026, 3, 18, 15, 47, 0).getTime();
 
   const SPEC = {
@@ -162,11 +161,11 @@
     title: "Friends",
     color: "#82295a",
     startAt: ANCHOR_AT,
-    image: "friends.png",          // ← 把你的照片命名为 friends.jpg 放在同目录
+    image: "friends.png",         
     description: "Travel with Friends"
   };
 
-  // === 占位图(图片加载失败时显示)===
+
   function makePlaceholderImage() {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
       <rect width="400" height="400" fill="#efdfd0"/>
@@ -177,7 +176,7 @@
     return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
   }
 
-  // === 渲染 halftone 照片 ===
+
   const clockArea = document.getElementById('clockArea');
   const printFrame = document.createElement('div');
   printFrame.className = 'print-frame';
@@ -186,7 +185,7 @@
   printFrame.appendChild(halftoneCanvas);
   clockArea.appendChild(printFrame);
 
-  // 照片底下的小字签
+
   const caption = document.createElement('div');
   caption.className = 'anchor-caption';
   caption.textContent = '◆ ANCHORED · ' + new Date(ANCHOR_AT).toLocaleString('en-US', {
@@ -205,7 +204,7 @@
         width: W, height: H, cellSize: 4, color: SPEC.color
       });
     } else {
-      // 降级:直接画图
+  
       const ctx = halftoneCanvas.getContext('2d');
       ctx.fillStyle = '#efdfd0';
       ctx.fillRect(0, 0, W, H);
@@ -218,7 +217,7 @@
   };
   img.src = SPEC.image;
 
-  // === Plaque ===
+
   function renderPlaque() {
     const rows = [];
     rows.push(['classification', 'fixed moment · ' + SPEC.kind]);
