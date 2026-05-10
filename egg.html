@@ -67,7 +67,7 @@
     color: var(--ink-soft); text-transform: uppercase;
   }
 
-  /* === 标本展示区域 === */
+
   .clock-area {
     display: flex; align-items: center; justify-content: center;
     min-height: 460px;
@@ -75,7 +75,7 @@
   }
   .clock-area canvas { display: block; }
 
-  /* === 打印式图片容器 === */
+
   .print-frame {
     position: relative;
     width: 100%;
@@ -88,11 +88,11 @@
     display: block;
     width: 100%;
     height: auto;
-    /* clip-path 控制从上往下显现 */
+ 
     clip-path: inset(0 0 var(--clip) 0);
     transition: clip-path 0.4s linear;
   }
-  /* 打印头扫描线 */
+ 
   .print-frame .scanline {
     position: absolute;
     left: 0; right: 0;
@@ -112,7 +112,7 @@
   .print-frame.printing .scanline { opacity: 1; }
   .print-frame.done .scanline { display: none; }
 
-  /* "等待打印"占位状态 */
+  
   .print-frame.idle::before {
     content: '○ awaiting initiation';
     position: absolute;
@@ -125,7 +125,7 @@
     z-index: 2;
   }
 
-  /* 文字时钟(给非图片类型保留)*/
+ 
   .clock-area .text-clock {
     text-align: center; font-family: var(--serif); width: 100%;
   }
@@ -138,7 +138,7 @@
     justify-content: center; flex-wrap: wrap;
   }
 
-  /* === 进度条 === */
+
   .scrubber { margin-top: 22px; padding: 0 24px; }
   .scrubber-row {
     display: flex; justify-content: space-between;
@@ -171,7 +171,7 @@
     transition: none;
   }
 
-  /* === Plaque === */
+
   .plaque {
     padding: 24px 22px;
   }
@@ -253,10 +253,7 @@
 <script src="core.js"></script>
 <script>
 (function () {
-  // ============================================================
-  //  通用 countdown specimen 渲染逻辑
-  //  改成其他有图片的 countdown 标本时,只需改 SPEC 对象
-  // ============================================================
+ 
   const SPEC = {
     id: "boil-an-egg",
     file: "egg.html",
@@ -266,13 +263,13 @@
     title: "Boil an Egg",
     color: "#e0a93a",
     duration: (8 * 60 + 12) * 1000,     
-    image: "egg.jpg",  // 占位图,以后改成真图 URL 或 dataURL
+    image: "egg.jpg", 
     description: "Take an egg out of the fridge and put it into a pot with water. After around 8 min and 11 seconds, a soft boiled egg comes into birth."
   }
 
   const CATALOGUED_DATE = new Date(2022, 6, 12);
 
-  // 占位图:渐变底色 + 大 emoji,让你能立刻看到打印动画的效果
+
   function makePlaceholderImage() {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
       <defs>
@@ -290,7 +287,7 @@
     return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
   }
 
-  // === 状态:默认未启动 ===
+
   const KEY = 'TA_STATE_' + SPEC.id;
   function loadState() {
     try { return JSON.parse(localStorage.getItem(KEY) || 'null'); }
@@ -299,13 +296,13 @@
   function saveState(s) { localStorage.setItem(KEY, JSON.stringify(s)); }
 
   let saved = loadState() || {
-    startAt: null,        // null = 还没开始
+    startAt: null,       
     paused: false,
     pausedElapsed: 0,
   };
 
-  // === 计算当前 elapsed(考虑暂停 / 拖拽 / 完成)===
-  let scrubVal = null;      // 用户拖动进度条时的临时值
+ 
+  let scrubVal = null;     
 
   function getElapsed() {
     if (scrubVal != null) return scrubVal;
@@ -319,7 +316,7 @@
   function isRunning() { return saved.startAt != null && !saved.paused && getElapsed() < SPEC.duration; }
   function isDone()    { return saved.startAt != null && getElapsed() >= SPEC.duration; }
 
-  // === 控制按钮 ===
+
   const controlsEl = document.getElementById('controls');
   let mainBtn, resetBtn;
 
@@ -345,16 +342,16 @@
 
   function toggleMain() {
     if (isIdle()) {
-      // 第一次点 PLAY
+
       saved.startAt = Date.now();
       saved.paused = false;
       saved.pausedElapsed = 0;
     } else if (saved.paused) {
-      // RESUME
+
       saved.startAt = Date.now() - saved.pausedElapsed;
       saved.paused = false;
     } else {
-      // PAUSE
+
       saved.pausedElapsed = getElapsed();
       saved.paused = true;
     }
@@ -371,7 +368,7 @@
     render();
   }
 
-  // === 进度条交互(可拖拽预览,松开恢复 live)===
+
   const track = document.getElementById('progressTrack');
   const fill = document.getElementById('progressFill');
   const thumb = document.getElementById('progressThumb');
@@ -398,9 +395,7 @@
     if (dragging) {
       dragging = false;
       scrubberEl.classList.remove('scrubbing');
-      // 双击进度条会取消 scrub —— 这里改成松开后保留预览,直到用户点击控制按钮
-      // 如果想松开就回 live,把下一行注释取消:
-      // scrubVal = null;
+    
       render();
     }
   });
@@ -409,7 +404,7 @@
     render();
   });
 
-  // === 准备 halftone canvas(只画一次)===
+ 
   const clockArea = document.getElementById('clockArea');
   const printFrame = document.createElement('div');
   printFrame.className = 'print-frame idle';
@@ -424,8 +419,7 @@
   let halftoneReady = false;
   const img = new Image();
   img.onload = function () {
-    // 用 core.js 的 halftone 工具把图渲染到 canvas;
-    // 如果 TA.drawHalftonePhoto 不存在,降级成普通绘制
+    
     const W = 480, H = 480;
     halftoneCanvas.width = W;
     halftoneCanvas.height = H;
@@ -434,7 +428,7 @@
         width: W, height: H, cellSize: 4, color: SPEC.color
       });
     } else {
-      // 降级:直接画图
+
       const ctx = halftoneCanvas.getContext('2d');
       ctx.fillStyle = '#efdfd0';
       ctx.fillRect(0, 0, W, H);
@@ -445,32 +439,28 @@
   };
   img.src = SPEC.image;
 
-  // === 渲染 ===
+
   function render() {
     const elapsed = getElapsed();
     const progress = Math.min(1, elapsed / SPEC.duration);
 
-    // --- 打印式显现 ---
+ 
     if (halftoneReady) {
-      // clip-path 从下往上"显现":未显现部分从底部裁掉
-      // progress = 0 → 整张被裁掉(100%);progress = 1 → 完全显现(0%)
+    
       const clipPercent = (1 - progress) * 100;
       halftoneCanvas.style.setProperty('--clip', clipPercent + '%');
 
-      // 扫描线位置 = 显现的边界(从上往下推)
-      // scanline.style.setProperty('--scan-top', (progress * 100) + '%');
-
-      // 状态 class
+     
       printFrame.classList.toggle('idle', isIdle());
       printFrame.classList.toggle('printing', isRunning());
       printFrame.classList.toggle('done', progress >= 1);
     }
 
-    // --- 进度条 ---
+
     fill.style.width = (progress * 100) + '%';
     thumb.style.left = (progress * 100) + '%';
 
-    // --- 标签 ---
+
     const elapsedStr = fmtMS(elapsed);
     const totalStr = fmtMS(SPEC.duration);
     document.getElementById('elapsedLabel').textContent = elapsedStr + ' / ' + totalStr;
@@ -483,7 +473,7 @@
     else                  scrubLabel = '● live';
     document.getElementById('scrubLabel').textContent = scrubLabel;
 
-    // --- Plaque ---
+
     renderPlaque(elapsed);
   }
 
@@ -520,15 +510,15 @@
     document.getElementById('catTag').textContent = '◆ CATALOGUED · ' + new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   }
 
-  // === 启动 ===
+
   rebuildButtons();
   render();
   setInterval(function () {
-    // 只在 running 时持续重绘
+   
     if (isRunning() || scrubVal != null) {
       render();
     } else if (isDone() && !mainBtn.disabled) {
-      // 刚刚跑完,刷新按钮状态
+
       rebuildButtons();
       render();
     }
