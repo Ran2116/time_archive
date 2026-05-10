@@ -56,7 +56,7 @@
     color: var(--ink-soft); text-transform: uppercase;
   }
 
-  /* === 标本展示区 === */
+
   .clock-area {
     display: flex; align-items: center; justify-content: center;
     min-height: 460px;
@@ -64,7 +64,7 @@
   }
   .clock-area canvas { display: block; }
 
-  /* halftone 照片框 */
+
   .print-frame {
     position: relative;
     width: 100%;
@@ -79,7 +79,7 @@
     height: auto;
   }
 
-  /* 照片下面的 day tally(带"becoming"感的小副标题)*/
+ 
   .record-caption {
     margin-top: 18px;
     text-align: center;
@@ -177,8 +177,7 @@
 <script src="core.js"></script>
 <script>
 (function () {
-  // === 锚定起始日:2025 年 8 月 25 日 ===
-  // 月份 0 起算,8 月 = 7
+ 
   const STARTED_AT = new Date(2025, 7, 25, 0, 0, 0).getTime();
 
   const SPEC = {
@@ -195,10 +194,9 @@
     reflection: "Some clocks measure waiting. This one measures becoming."
   };
 
-  // === halftone 密度参数 ===
-  // 起始时 cellSize 大(点稀疏);随天数累积 cellSize 减小(点密集、图变完整)
-  const START_CELL = 16;     // 起步:很稀疏
-  const END_CELL = 3;        // 终点:细密如印刷
+ 
+  const START_CELL = 16;     
+  const END_CELL = 3;       
   const GRADUATION_AT = new Date(2027, 4, 15).getTime();  // 2027-05-15
 const TIMESCALE_MS = GRADUATION_AT - STARTED_AT;
 
@@ -207,7 +205,7 @@ const TIMESCALE_MS = GRADUATION_AT - STARTED_AT;
     return START_CELL - (START_CELL - END_CELL) * progress;
   }
 
-  // === 占位图(图片加载失败时显示)===
+ 
   function makePlaceholderImage() {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
       <rect width="400" height="400" fill="#efdfd0"/>
@@ -217,7 +215,7 @@ const TIMESCALE_MS = GRADUATION_AT - STARTED_AT;
     return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
   }
 
-  // === 状态(record 类型一直走,无暂停语义复杂)===
+ 
   if (!SPEC.startAt) SPEC.startAt = Date.now();
   const KEY = 'TA_STATE_' + SPEC.id;
   let saved = null;
@@ -226,7 +224,7 @@ const TIMESCALE_MS = GRADUATION_AT - STARTED_AT;
   if (!saved.startAt) saved.startAt = SPEC.startAt;
   function save() { localStorage.setItem(KEY, JSON.stringify(saved)); }
 
-  // === 控制按钮 ===
+
   const controlsEl = document.getElementById('controls');
   function makeBtn(label, onClick) {
     const b = document.createElement('button');
@@ -248,7 +246,7 @@ const TIMESCALE_MS = GRADUATION_AT - STARTED_AT;
     save(); render();
   });
 
-  // === 进度条(record 类型用 5 年作为预览范围)===
+ 
   let scrubVal = null;
   const sb = document.getElementById('scrubber');
   sb.style.display = 'block';
@@ -274,7 +272,7 @@ const TIMESCALE_MS = GRADUATION_AT - STARTED_AT;
     return Math.max(0, Date.now() - saved.startAt);
   }
 
-  // === 准备 halftone canvas + 下方副标题 ===
+ 
   const clockArea = document.getElementById('clockArea');
   const printFrame = document.createElement('div');
   printFrame.className = 'print-frame';
@@ -303,7 +301,7 @@ const TIMESCALE_MS = GRADUATION_AT - STARTED_AT;
   };
   img.src = SPEC.image;
 
-  // 画 halftone(每帧重画因为 cellSize 在变化)
+ 
   const W = 420, H = 420;
   halftoneCanvas.width = W;
   halftoneCanvas.height = H;
@@ -323,13 +321,13 @@ const TIMESCALE_MS = GRADUATION_AT - STARTED_AT;
     }
   }
 
-  // === 渲染 ===
+  
   function render() {
     const elapsed = getElapsed();
 
     drawHalftone(elapsed);
 
-    // 更新 day count
+   
     const t = TA.fmtDHMS(elapsed);
     document.getElementById('dayCount').textContent = t.d;
 
@@ -354,7 +352,7 @@ const TIMESCALE_MS = GRADUATION_AT - STARTED_AT;
   }
 
   render();
-  // 每秒重画一次(record 类型节奏可以慢一点;halftone 每秒 redraw 不会卡)
+ 
   setInterval(render, 1000);
 })();
 </script>
