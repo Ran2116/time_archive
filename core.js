@@ -1,13 +1,10 @@
-// THE TIME ARCHIVE · core renderer
-// Vanilla JS — no React. Each specimen page calls TA.renderSpecimen(canvas, type, opts).
-// Includes: halftone renderer + clock drawing functions + time helpers.
+
 
 (function (global) {
   'use strict';
 
   const TA = {};
 
-  // ---------- TIME HELPERS ----------
   TA.fmtDHMS = function (ms) {
     if (ms < 0) ms = 0;
     const s = Math.floor(ms / 1000);
@@ -35,9 +32,7 @@
     return parts.join(' ') || '0s';
   };
 
-  // ---------- HALFTONE RENDERER ----------
-  // Draws `drawFn(ctx, w, h)` to an offscreen canvas, then samples it as
-  // dot-coverage halftone in `color` onto `targetCanvas`.
+  
   TA.halftone = function (targetCanvas, opts) {
     const w = opts.width;
     const h = opts.height;
@@ -51,7 +46,7 @@
     targetCanvas.style.width = w + 'px';
     targetCanvas.style.height = h + 'px';
 
-    // offscreen at 2x
+   
     const off = document.createElement('canvas');
     off.width = w * ss;
     off.height = h * ss;
@@ -62,7 +57,7 @@
     draw(offctx, w, h);
     const src = offctx.getImageData(0, 0, w * ss, h * ss).data;
 
-    // target
+  
     const tctx = targetCanvas.getContext('2d');
     tctx.clearRect(0, 0, w, h);
     tctx.fillStyle = color;
@@ -73,7 +68,7 @@
 
     for (let cy = 0; cy < rows; cy++) {
       for (let cx = 0; cx < cols; cx++) {
-        // average the cell in offscreen pixels
+
         const x0 = Math.floor(cx * cellPx);
         const y0 = Math.floor(cy * cellPx);
         const x1 = Math.min(off.width, x0 + Math.ceil(cellPx));
@@ -82,7 +77,7 @@
         for (let y = y0; y < y1; y++) {
           for (let x = x0; x < x1; x++) {
             const i = (y * off.width + x) * 4;
-            // luminance (0=black, 1=white)
+
             const lum = (src[i] * 0.299 + src[i + 1] * 0.587 + src[i + 2] * 0.114) / 255;
             sum += lum; n++;
           }
@@ -101,8 +96,7 @@
     }
   };
 
-  // ---------- CLOCK DRAW FUNCTIONS ----------
-  // All draw onto a plain canvas; halftone wraps them.
+  
 
   TA.drawRound = function (ctx, w, h, opts) {
     const progress = opts.progress || 0;
@@ -329,8 +323,7 @@
     ctx.closePath(); ctx.fill();
   };
 
-  // ---------- DIGITAL LOOP CLOCK ----------
-  // A 7-segment-style countdown that auto-resets when it hits 0.
+ 
   TA.drawDigitalLoop = function (ctx, w, h, opts) {
     const remain = opts.remainMs || 0;
     ctx.clearRect(0, 0, w, h);
@@ -339,24 +332,24 @@
     const ms = Math.floor((remain % 1000) / 100);
     const text = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
 
-    // outer bezel
+ 
     ctx.fillStyle = '#000';
     ctx.fillRect(8, h*0.18, w - 16, h*0.64);
     ctx.fillStyle = '#fff';
     ctx.fillRect(14, h*0.20, w - 28, h*0.60);
 
-    // big digits
+
     ctx.fillStyle = '#000';
     ctx.font = 'bold ' + (h * 0.46) + 'px "JetBrains Mono", monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(text, w/2, h/2);
 
-    // tenths under
+  
     ctx.font = 'bold ' + (h * 0.10) + 'px "JetBrains Mono", monospace';
     ctx.fillText('.' + ms, w/2 + w*0.32, h/2 + h*0.18);
 
-    // tick marks above
+   
     ctx.fillStyle = '#000';
     for (let i = 0; i < 12; i++) {
       const x = 24 + i * ((w - 48) / 11);
@@ -364,8 +357,7 @@
     }
   };
 
-  // ---------- HALFTONE PHOTO (used by user uploads) ----------
-  // imgEl can be HTMLImageElement
+ 
   TA.drawHalftonePhoto = function (targetCanvas, imgEl, opts) {
     const w = opts.width;
     const h = opts.height;
@@ -411,9 +403,7 @@
     }
   };
 
-  // ---------- HIGH-LEVEL: render a specimen onto a canvas, animated ----------
-  // type: round, grandfather, sweet_potato, candle, hourglass, moon, arc, digital_loop
-  // for `accumulate`/`fixed`/`interval`/`waiting` use TA.renderText (numeric panel)
+ 
   TA.renderClock = function (canvas, type, params) {
     // params: { color, cellSize, progress, phase, roman, width, height, remainMs }
     const w = params.width || canvas.width;
@@ -437,7 +427,7 @@
     });
   };
 
-  // ---------- CATEGORY LABEL FOR TYPE ----------
+
   TA.kindOf = function (type) {
     return ({
       round: 'countdown',
@@ -474,9 +464,7 @@
     })[type] || type;
   };
 
-  // ---------- ANIMATION LOOP HELPER ----------
-  // Calls drawFn(elapsed) on every tick at intervalMs.
-  // Returns { stop, pause, resume, reset, scrub(ms), liveMode() }
+ 
   TA.runClock = function (opts) {
     let startedAt = opts.startAt || Date.now();
     let pausedElapsed = 0;
